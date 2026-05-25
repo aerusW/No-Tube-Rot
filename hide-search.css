@@ -1,0 +1,20 @@
+/* ── Shorts shelves in search results ── */
+ytd-search ytd-reel-shelf-renderer {
+  display: none !important;
+}
+
+/* ── Individual Short videos appearing in result grids ── */
+ytd-search ytd-video-renderer:has(a[href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* ── "People also searched for" horizontal card interruptions ── */
+ytd-search ytd-horizontal-card-list-renderer {
+  display: none !important;
+}
+
+/* ── Recommendation shelves that break up results
+      ("People also watched", "Featured playlists", etc.) ── */
+ytd-search ytd-shelf-renderer {
+  display: none !important;
+}
