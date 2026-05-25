@@ -1,0 +1,24 @@
+/* Shorts shelves on home/feed pages */
+ytd-rich-shelf-renderer[is-shorts],
+ytd-reel-shelf-renderer,
+ytd-shorts {
+  display: none !important;
+}
+
+/* Shorts entry in left sidebar and mini sidebar */
+ytd-guide-entry-renderer:has(a[href="/shorts"]),
+ytd-mini-guide-entry-renderer:has(a[href="/shorts"]) {
+  display: none !important;
+}
+
+/* Shorts tab on channel pages */
+yt-tab-shape[tab-title="Shorts"] {
+  display: none !important;
+}
+
+/* Individual Short items in video grids and lists */
+ytd-video-renderer:has(a[href*="/shorts/"]),
+ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+ytd-rich-item-renderer:has(a[href*="/shorts/"]) {
+  display: none !important;
+}
