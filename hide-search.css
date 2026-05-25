@@ -1,10 +1,19 @@
-/* ── Shorts shelves in search results ── */
+/* ── Shorts shelf (horizontal scrolling section) ── */
 ytd-search ytd-reel-shelf-renderer {
   display: none !important;
 }
 
-/* ── Individual Short videos appearing in result grids ── */
-ytd-search ytd-video-renderer:has(a[href*="/shorts/"]) {
+/* ── Individual Shorts mixed into results — caught by SHORTS badge ── */
+ytd-search ytd-video-renderer:has([overlay-style="SHORTS"]),
+ytd-search ytd-grid-video-renderer:has([overlay-style="SHORTS"]),
+ytd-search ytd-rich-item-renderer:has([overlay-style="SHORTS"]) {
+  display: none !important;
+}
+
+/* ── Individual Shorts caught by URL (fallback) ── */
+ytd-search ytd-video-renderer:has(a[href*="/shorts/"]),
+ytd-search ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+ytd-search ytd-rich-item-renderer:has(a[href*="/shorts/"]) {
   display: none !important;
 }
 
