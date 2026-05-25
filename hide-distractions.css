@@ -1,0 +1,31 @@
+/* ── Notification bell and badge (out of sight, out of mind) ── */
+ytd-notification-topbar-button-renderer {
+  display: none !important;
+}
+
+/* ── Home feed content (belt-and-suspenders alongside the redirect) ── */
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* ── Community posts in the subscriptions feed ── */
+ytd-browse[page-subtype="subscriptions"] ytd-backstage-post-thread-renderer {
+  display: none !important;
+}
+
+/* ── Session timer ── */
+#yt-zen-timer {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  font-family: sans-serif;
+  padding: 4px 10px;
+  border-radius: 12px;
+  opacity: 0.6;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+}
