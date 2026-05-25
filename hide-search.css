@@ -1,5 +1,11 @@
-/* ── Shorts shelf (horizontal scrolling section) ── */
+/* ── Shorts shelf — legacy renderer ── */
 ytd-search ytd-reel-shelf-renderer {
+  display: none !important;
+}
+
+/* ── Shorts shelf — new view-model renderer (Cobalt UI) ── */
+ytd-search grid-shelf-view-model,
+ytd-search .ytGridShelfViewModelHost {
   display: none !important;
 }
 
