@@ -1,0 +1,32 @@
+/* ── Sidebar: hide all recommendations ── */
+#secondary.ytd-watch-flexy,
+ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* ── Primary column: expand to fill freed space ── */
+#primary.ytd-watch-flexy {
+  max-width: 100% !important;
+}
+#columns.ytd-watch-flexy {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Autoplay: hide the "up next in X seconds" countdown overlay ── */
+.ytp-autonav-endscreen-upnext-container {
+  display: none !important;
+}
+
+/* ── End-screen cards overlaid on the video ── */
+.ytp-ce-element,
+.ytp-ce-covering-overlay,
+.ytp-ce-shadow-overlay {
+  display: none !important;
+}
+
+/* ── Info cards (the (i) pop-ups during playback) ── */
+.ytp-cards-teaser,
+.ytp-cards-button {
+  display: none !important;
+}
