@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube: Subscriptions & No Shorts",
+  "version": "1.0",
+  "description": "Redirects YouTube homepage to your subscriptions feed and hides all Shorts content.",
+  "permissions": ["declarativeNetRequest"],
+  "host_permissions": ["*://www.youtube.com/*"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "css": ["hide-shorts.css"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
