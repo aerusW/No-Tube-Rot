@@ -1,0 +1,76 @@
+/*
+ * Calm restyle: softer, less "addicting" colours, flat solid surfaces, fewer
+ * loud buttons, a trimmed sidebar. Paired with the redirect + Shorts rules.
+ *
+ * One accent replaces YouTube's alarm-red everywhere it signals urgency
+ * (progress bar, notification counts): a muted sage, chosen to read as calm
+ * rather than a dopamine trigger. No gradients are introduced; the video
+ * player's own control scrims are left alone so controls stay legible.
+ */
+
+:root {
+  --ntr-bg: #131314;        /* base, a touch off pure black */
+  --ntr-surface: #1c1d20;   /* chips, search, cards */
+  --ntr-surface-2: #26272b; /* hover / raised */
+  --ntr-text: #ececec;      /* softened from pure white */
+  --ntr-dim: #9aa0a6;
+  --ntr-accent: #6e9b94;    /* muted sage — the single accent */
+  --ntr-border: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Solid, softer surfaces (no near-black harshness) ---- */
+html, ytd-app, ytd-watch-flexy, #page-manager, ytd-browse,
+#primary, #columns, #content {
+  background-color: var(--ntr-bg) !important;
+}
+#masthead-container, ytd-masthead, #masthead {
+  background: var(--ntr-bg) !important;
+  box-shadow: none !important;
+}
+
+/* ---- Calm the reds ---- */
+/* red YouTube logo -> monochrome */
+ytd-logo { filter: grayscale(1) brightness(1.15) !important; }
+/* watched-progress + scrubber -> accent instead of red */
+.ytp-play-progress, .ytp-swatch-background-color { background-color: var(--ntr-accent) !important; }
+.ytp-scrubber-button { background-color: var(--ntr-accent) !important; }
+/* notification / unread count badge -> accent */
+.ytSpecIconBadgeShapeBadge { background-color: var(--ntr-accent) !important; color: #0d0f0f !important; }
+
+/* ---- Fewer / quieter buttons ---- */
+/* filter chips: flat surface, selected uses the accent (not bright white) */
+yt-chip-cloud-chip-renderer {
+  background: var(--ntr-surface) !important;
+  border: 1px solid var(--ntr-border) !important;
+  color: var(--ntr-text) !important;
+}
+yt-chip-cloud-chip-renderer.iron-selected,
+yt-chip-cloud-chip-renderer[aria-selected="true"] {
+  background: var(--ntr-accent) !important;
+  color: #0d0f0f !important;
+  border-color: transparent !important;
+}
+/* secondary pill actions recede to outlines */
+.yt-spec-button-shape-next--tonal {
+  background: transparent !important;
+  border: 1px solid var(--ntr-border) !important;
+}
+/* flat search box */
+#center #search-form, ytd-searchbox #container {
+  background: var(--ntr-surface) !important;
+  border: 1px solid var(--ntr-border) !important;
+}
+
+/* ---- Trim the left sidebar ---- */
+/* Keep Home, Subscriptions (+ channels) and "You"; drop the rest.
+   Matched on stable endpoint hrefs so it survives UI-language changes. */
+ytd-guide-section-renderer:has(a[href="/premium"]),          /* More from YouTube */
+ytd-guide-section-renderer:has(a[href="/gaming"]),           /* Explore */
+ytd-guide-section-renderer:has(a[href*="/feed/storefront"]), /* Explore: Films */
+ytd-guide-entry-renderer:has(a[href="/reporthistory"]),      /* Report history */
+ytd-guide-renderer #footer,
+tp-yt-app-drawer #footer {
+  display: none !important;
+}
+/* Note: the "You" section contains a studio.youtube.com link (Your videos),
+   so sections are never matched on that host — it would hide "You" too. */

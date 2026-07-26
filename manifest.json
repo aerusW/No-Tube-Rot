@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "No-Tube-Rot",
   "version": "1.2.0",
-  "description": "Redirects the YouTube homepage to your subscriptions feed and hides all Shorts content.",
+  "description": "Redirects the YouTube homepage to your subscriptions feed, hides all Shorts, and gives YouTube a calmer, trimmed-down look.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -28,7 +28,7 @@
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],
-      "css": ["hide-shorts.css"],
+      "css": ["hide-shorts.css", "calm.css"],
       "js": ["content.js"],
       "run_at": "document_start"
     }
