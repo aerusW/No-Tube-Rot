@@ -4,7 +4,9 @@
 
 No-Tube-Rot drops you straight onto your Subscriptions, removes every Short, and repaints the interface in calm, muted tones so nothing on the page is fighting for your next click. No popups, no settings, no account, no tracking — load it once and forget it's there.
 
-![No-Tube-Rot: a calm subscriptions feed with a trimmed sidebar](docs/subscriptions.jpg)
+| Before — YouTube's algorithmic home | After — your calm subscriptions feed |
+| :---: | :---: |
+| ![Vanilla YouTube home: red UI, clickbait grid, filter chips](docs/before-home.jpg) | ![No-Tube-Rot: calm subscriptions feed with a trimmed sidebar](docs/after-subscriptions.jpg) |
 
 ## What it does
 
