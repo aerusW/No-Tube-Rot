@@ -1,3 +1,13 @@
+/*
+ * Shorts hiding rules.
+ *
+ * Note on matching: YouTube keeps "Shorts" as an untranslated brand name in
+ * every locale (verified on an Italian UI, where "Subscriptions" shows as
+ * "Iscrizioni" but the Shorts entry's title stays "Shorts"), so matching the
+ * English word is locale-independent. It also switched some labels to the
+ * singular ("Short"), so tab matching uses a case-insensitive prefix.
+ */
+
 /* Shorts shelves on home/feed pages */
 ytd-rich-shelf-renderer[is-shorts],
 ytd-reel-shelf-renderer,
@@ -5,20 +15,29 @@ ytd-shorts {
   display: none !important;
 }
 
-/* Shorts entry in left sidebar and mini sidebar */
-ytd-guide-entry-renderer:has(a[href="/shorts"]),
-ytd-mini-guide-entry-renderer:has(a[href="/shorts"]) {
+/* Shorts entry in the left sidebar and mini sidebar.
+   The link no longer carries href="/shorts"; its title attribute does. */
+ytd-guide-entry-renderer:has(a[title="Shorts" i]),
+ytd-guide-entry-renderer:has(a[aria-label="Shorts" i]),
+ytd-mini-guide-entry-renderer:has(a[title="Shorts" i]),
+ytd-mini-guide-entry-renderer:has(a[aria-label="Shorts" i]) {
   display: none !important;
 }
 
-/* Shorts tab on channel pages */
-yt-tab-shape[tab-title="Shorts"] {
+/* Shorts tab on channel pages.
+   The tab exposes no href/data hook, only localized (now singular) text, so
+   a case-insensitive prefix on the English brand name is the stable option. */
+yt-tab-shape[tab-title^="Short" i] {
   display: none !important;
 }
 
-/* Individual Short items in video grids and lists */
+/* Individual Short items in video grids, lists and search results */
 ytd-video-renderer:has(a[href*="/shorts/"]),
 ytd-grid-video-renderer:has(a[href*="/shorts/"]),
-ytd-rich-item-renderer:has(a[href*="/shorts/"]) {
+ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+ytd-reel-item-renderer,
+ytm-shorts-lockup-view-model,
+ytm-shorts-lockup-view-model-v2,
+yt-lockup-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }
