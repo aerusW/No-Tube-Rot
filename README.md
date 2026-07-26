@@ -1,54 +1,60 @@
 # No-Tube-Rot
 
-Get rid of Shorts and the endless YouTube homepage. See the channels you
-subscribed to — not endless AI slop.
+**Turn YouTube back into a tool for watching the creators you chose — not an infinite feed built to keep you scrolling.**
 
-A tiny, zero-config browser extension that:
+No-Tube-Rot drops you straight onto your Subscriptions, removes every Short, and repaints the interface in calm, muted tones so nothing on the page is fighting for your next click. No popups, no settings, no account, no tracking — load it once and forget it's there.
 
-- **Redirects the YouTube homepage** (`youtube.com`) straight to your
-  **Subscriptions** feed (`youtube.com/feed/subscriptions`).
-- **Hides all Shorts** — shelves, the sidebar entry, the channel-page tab, and
-  individual Shorts scattered through grids, lists and search results.
-- **Calms the look** — replaces YouTube's alarm-red with one muted accent,
-  flattens surfaces to solid colours, quiets the buttons, and trims the left
-  sidebar down to Home, Subscriptions and You.
+![No-Tube-Rot: a calm subscriptions feed with a trimmed sidebar](docs/subscriptions.jpg)
 
-No popups, no options, no accounts, no tracking. Install it and forget it.
+## What it does
 
-## How it works
+- **Opens on your subscriptions, not the algorithm.** `youtube.com` takes you straight to your Subscriptions feed — the channels you actually picked.
+- **No Shorts, anywhere.** Gone from the home and subscription feeds, the sidebar, channel pages, search results, and grids.
+- **Shorts open as normal videos.** Click a Short from anywhere and it plays in the regular player — with a scrubber, playback speed, and description, and no vertical swipe-feed.
+- **A calmer interface.** YouTube's alarm-red is swapped for a single muted sage accent, surfaces are flat solid colours, and the loud buttons are quieted down.
+- **A focused sidebar.** Trimmed to Home, Subscriptions and You — no Explore, no "More from YouTube", no promos.
+- **Watch pages without the noise.** The recommended "up next" column is removed and the video widens to fill the space.
 
-| File | Role |
-|------|------|
-| `rules.json` | A `declarativeNetRequest` rule that redirects the homepage on a hard load, before the page paints. |
-| `content.js` | Catches YouTube's in-app (SPA) navigations back to the homepage that the network rule can't see, and redirects those too. The two are intentionally redundant so the redirect holds whether you type the URL or click the logo. |
-| `hide-shorts.css` | A content stylesheet that hides every Shorts surface. Matching is locale-independent: YouTube keeps "Shorts" as an untranslated brand name in every language. |
-| `calm.css` | A content stylesheet for the calmer look: one muted sage accent in place of red, flat solid surfaces, quieter buttons, and a trimmed sidebar. Sidebar sections are matched by their link targets, so the trim survives UI-language changes. |
+## Usage
+
+There's nothing to configure. Once it's installed, just use YouTube normally:
+
+- Go to `youtube.com` → you land on your **Subscriptions**.
+- Open any Short → it plays as a **normal video**.
+- Search and watch as usual → **no Shorts** in the results, and a quieter page throughout.
+
+To pause it, disable the extension in your browser's extensions page; to remove it, delete the folder from the list.
 
 ## Install
 
-### Chrome / Edge / Brave / Zen (Chromium)
+### Chrome / Edge / Brave / Chromium
 
 1. Download or clone this repo to a folder you'll keep.
-2. Go to `chrome://extensions` (`edge://extensions`, etc.).
+2. Open `chrome://extensions` (or `edge://extensions`, etc.).
 3. Turn on **Developer mode** (top-right).
 4. Click **Load unpacked** and select the `No-Tube-Rot` folder.
 
-### Firefox / Zen (Firefox-based)
+### Firefox / Zen
 
-Temporary install (cleared when the browser restarts):
+> ⚠️ Firefox-based browsers don't load the extension yet — tracked in [#8](https://github.com/aerusW/No-Tube-Rot/issues/8). Use a Chromium browser for now.
 
-1. Go to `about:debugging#/runtime/this-firefox`.
-2. Click **Load Temporary Add-on…**.
-3. Select the `manifest.json` file inside the `No-Tube-Rot` folder.
+## Under the hood
 
-Firefox 121 or newer is required (the Shorts-hiding CSS relies on the `:has()`
-selector, which Firefox enabled by default in 121).
+Four small files, all running locally — the extension makes no network requests of its own and collects nothing.
 
-## Permissions
+<details>
+<summary>File-by-file</summary>
 
-- `declarativeNetRequest` and host access to `www.youtube.com` — used only for
-  the homepage redirect. The extension makes no network requests of its own and
-  collects nothing.
+| File | Role |
+|------|------|
+| `rules.json` | `declarativeNetRequest` rules that redirect the homepage and Shorts URLs on a hard load, before the page paints. |
+| `content.js` | Catches YouTube's in-app (SPA) navigations that the network rules can't see, and redirects those too. The two are intentionally redundant so redirects hold whether you type a URL or click through the app. |
+| `hide-shorts.css` | Hides every Shorts surface. Matching is locale-independent — YouTube keeps "Shorts" as an untranslated brand name in every language. |
+| `calm.css` | The calmer look: one muted accent in place of red, flat surfaces, quieter buttons, a trimmed sidebar, and the recommended-column removal. Sidebar sections are matched by their link targets, so the trim survives UI-language changes. |
+
+</details>
+
+**Permissions:** `declarativeNetRequest` plus host access to `www.youtube.com`, used only for the redirects.
 
 ## License
 
