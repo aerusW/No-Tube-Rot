@@ -74,3 +74,12 @@ tp-yt-app-drawer #footer {
 }
 /* Note: the "You" section contains a studio.youtube.com link (Your videos),
    so sections are never matched on that host — it would hide "You" too. */
+
+/* ---- Watch page: drop the recommended / up-next column ---- */
+/* Removes the whole right column (which also carries live chat and the
+   playlist panel) and lets the video widen to fill the reclaimed space. */
+#secondary.ytd-watch-flexy { display: none !important; }
+ytd-watch-flexy[flexy]:not([fullscreen]) #primary.ytd-watch-flexy,
+ytd-watch-flexy[flexy]:not([fullscreen]) #columns.ytd-watch-flexy {
+  max-width: none !important;
+}
