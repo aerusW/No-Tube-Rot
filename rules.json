@@ -10,5 +10,29 @@
       "regexFilter": "^https://www\\.youtube\\.com/(\\?[^#]*)?$",
       "resourceTypes": ["main_frame"]
     }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": { "url": "https://www.youtube.com/feed/subscriptions" }
+    },
+    "condition": {
+      "regexFilter": "^https://www\\.youtube\\.com/shorts/?(\\?[^#]*)?$",
+      "resourceTypes": ["main_frame"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": { "regexSubstitution": "https://www.youtube.com/watch?v=\\1" }
+    },
+    "condition": {
+      "regexFilter": "^https://www\\.youtube\\.com/shorts/([\\w-]+)",
+      "resourceTypes": ["main_frame"]
+    }
   }
 ]
