@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "No-Tube-Rot",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Redirects the YouTube homepage to your subscriptions feed, hides all Shorts, and gives YouTube a calmer, trimmed-down look.",
   "icons": {
     "16": "icons/icon-16.png",

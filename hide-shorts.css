@@ -15,6 +15,15 @@ ytd-shorts {
   display: none !important;
 }
 
+/* Shorts shelves in search results.
+   These carry no shorts-specific tag or attribute — the shelf is a plain
+   grid-shelf-view-model, so it has to be matched by what it holds. Hiding
+   only the items inside left the "Shorts" header and its "Show more" button
+   stranded between results, with gaps where the items had been. */
+grid-shelf-view-model:has(a[href*="/shorts/"]) {
+  display: none !important;
+}
+
 /* Shorts entry in the left sidebar and mini sidebar.
    The link no longer carries href="/shorts"; its title attribute does. */
 ytd-guide-entry-renderer:has(a[title="Shorts" i]),
