@@ -6,16 +6,41 @@
  * (progress bar, notification counts): a muted sage, chosen to read as calm
  * rather than a dopamine trigger. No gradients are introduced; the video
  * player's own control scrims are left alone so controls stay legible.
+ *
+ * Theme: these rules repaint surfaces but deliberately never set body text
+ * colour — YouTube's own text colours are already right for whichever theme
+ * it is rendering, so the only job here is to match the surfaces to it.
+ * That makes the palette theme-scoped rather than fixed: a dark palette
+ * under html[dark] (the attribute YouTube puts on <html> for its dark theme,
+ * present in the server-rendered markup so there is no flash on load) and a
+ * light one otherwise. Following YouTube's own setting rather than the OS is
+ * intentional: YouTube already offers "Use device theme", so this tracks the
+ * system automatically for anyone who picked it, while still respecting a
+ * deliberate light-on-dark-OS override instead of fighting it.
  */
 
-:root {
+html[dark] {
   --ntr-bg: #131314;        /* base, a touch off pure black */
   --ntr-surface: #1c1d20;   /* chips, search, cards */
   --ntr-surface-2: #26272b; /* hover / raised */
   --ntr-text: #ececec;      /* softened from pure white */
   --ntr-dim: #9aa0a6;
   --ntr-accent: #6e9b94;    /* muted sage — the single accent */
+  --ntr-on-accent: #0d0f0f; /* text sitting on the accent */
   --ntr-border: rgba(255, 255, 255, 0.08);
+  --ntr-logo-filter: grayscale(1) brightness(1.15);
+}
+
+html:not([dark]) {
+  --ntr-bg: #f7f6f3;        /* warm off-white, not a glaring pure white */
+  --ntr-surface: #ecebe6;
+  --ntr-surface-2: #e1e0da;
+  --ntr-text: #1d1d1f;
+  --ntr-dim: #5f6368;
+  --ntr-accent: #4f7a73;    /* same sage, darkened to hold contrast on light */
+  --ntr-on-accent: #ffffff; /* near-black would only reach ~4:1 on the accent */
+  --ntr-border: rgba(0, 0, 0, 0.1);
+  --ntr-logo-filter: grayscale(1); /* the light-theme logo is already dark */
 }
 
 /* ---- Solid, softer surfaces (no near-black harshness) ---- */
@@ -30,12 +55,12 @@ html, ytd-app, ytd-watch-flexy, #page-manager, ytd-browse,
 
 /* ---- Calm the reds ---- */
 /* red YouTube logo -> monochrome */
-ytd-logo { filter: grayscale(1) brightness(1.15) !important; }
+ytd-logo { filter: var(--ntr-logo-filter) !important; }
 /* watched-progress + scrubber -> accent instead of red */
 .ytp-play-progress, .ytp-swatch-background-color { background-color: var(--ntr-accent) !important; }
 .ytp-scrubber-button { background-color: var(--ntr-accent) !important; }
 /* notification / unread count badge -> accent */
-.ytSpecIconBadgeShapeBadge { background-color: var(--ntr-accent) !important; color: #0d0f0f !important; }
+.ytSpecIconBadgeShapeBadge { background-color: var(--ntr-accent) !important; color: var(--ntr-on-accent) !important; }
 
 /* ---- Fewer / quieter buttons ---- */
 /* filter chips: flat surface, selected uses the accent (not bright white) */
@@ -47,7 +72,7 @@ yt-chip-cloud-chip-renderer {
 yt-chip-cloud-chip-renderer.iron-selected,
 yt-chip-cloud-chip-renderer[aria-selected="true"] {
   background: var(--ntr-accent) !important;
-  color: #0d0f0f !important;
+  color: var(--ntr-on-accent) !important;
   border-color: transparent !important;
 }
 /* secondary pill actions recede to outlines */

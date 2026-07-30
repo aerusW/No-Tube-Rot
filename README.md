@@ -21,7 +21,7 @@ No-Tube-Rot drops you straight onto your Subscriptions, removes every Short, and
 - **Opens on your subscriptions, not the algorithm.** `youtube.com` takes you straight to your Subscriptions feed — the channels you actually picked.
 - **No Shorts, anywhere.** Gone from the home and subscription feeds, the sidebar, channel pages, search results, and grids.
 - **Shorts open as normal videos.** Click a Short from anywhere and it plays in the regular player — with a scrubber, playback speed, and description, and no vertical swipe-feed.
-- **A calmer interface.** YouTube's alarm-red is swapped for a single muted sage accent, surfaces are flat solid colours, and the loud buttons are quieted down.
+- **A calmer interface.** YouTube's alarm-red is swapped for a single muted sage accent, surfaces are flat solid colours, and the loud buttons are quieted down. Works in both of YouTube's themes — it follows your light/dark setting, including "Use device theme".
 - **A focused sidebar.** Trimmed to Home, Subscriptions and You — no Explore, no "More from YouTube", no promos.
 - **Watch pages without the noise.** The recommended "up next" column is removed and the video widens to fill the space.
 
@@ -60,7 +60,7 @@ Four small files, all running locally — the extension makes no network request
 | `rules.json` | `declarativeNetRequest` rules that redirect the homepage and Shorts URLs on a hard load, before the page paints. |
 | `content.js` | Catches YouTube's in-app (SPA) navigations that the network rules can't see, and redirects those too. The two are intentionally redundant so redirects hold whether you type a URL or click through the app. |
 | `hide-shorts.css` | Hides every Shorts surface. Matching is locale-independent — YouTube keeps "Shorts" as an untranslated brand name in every language. |
-| `calm.css` | The calmer look: one muted accent in place of red, flat surfaces, quieter buttons, a trimmed sidebar, and the recommended-column removal. Sidebar sections are matched by their link targets, so the trim survives UI-language changes. |
+| `calm.css` | The calmer look: one muted accent in place of red, flat surfaces, quieter buttons, a trimmed sidebar, and the recommended-column removal. Has a light and a dark palette, picked from YouTube's own theme setting. Sidebar sections are matched by their link targets, so the trim survives UI-language changes. |
 
 </details>
 
