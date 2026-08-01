@@ -7,5 +7,5 @@ contact_links:
     url: https://github.com/aerusW/No-Tube-Rot#install
     about: How to load the extension, and what it changes once it's on.
   - name: 🔒 Report a security issue
-    url: https://github.com/aerusW/No-Tube-Rot/blob/main/CONTRIBUTING.md#reporting-security-issues
-    about: Please report security-sensitive problems privately, not as a public issue.
+    url: https://github.com/aerusW/No-Tube-Rot/security/advisories/new
+    about: Report security-sensitive problems privately, not as a public issue.

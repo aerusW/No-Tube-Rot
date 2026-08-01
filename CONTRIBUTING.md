@@ -221,5 +221,17 @@ not selectors.
 
 ## Reporting security issues
 
-Please **do not** open a public issue for security-sensitive problems. Email the
-maintainer at francesco.serangeli@proton.me instead.
+Please **do not** open a public issue for security-sensitive problems.
+
+Use GitHub's private reporting instead — **Security → Report a vulnerability**
+on [the repository](https://github.com/aerusW/No-Tube-Rot/security/advisories/new).
+It's private to you and the maintainer, and keeps the report attached to the
+project.
+
+If you'd rather not use GitHub, email francesco.serangeli@proton.me.
+
+Worth knowing what the attack surface actually is: the extension makes no
+network requests, stores nothing, and runs only on `www.youtube.com`. The
+plausible concerns are the `declarativeNetRequest` redirect rules and anything
+that would widen the permission set — see
+[what this project is](#what-this-project-is-and-isnt).
