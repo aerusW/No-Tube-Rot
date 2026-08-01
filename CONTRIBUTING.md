@@ -193,9 +193,13 @@ git push origin v1.3.4
 gh release create v1.3.4 --title "v1.3.4" --notes-file <(...)
 ```
 
-Tag names are the manifest version prefixed with `v`. The tag goes on the last
-commit carrying that version, so checking out a tag gives you exactly the tree
-that shipped under it.
+Tag names are the manifest version prefixed with `v`, and **a tag never moves
+once it is pushed.** Checking out `v1.3.2` must always give the exact tree that
+shipped as 1.3.2, forever — so if you tagged too early, cut the next patch
+version rather than re-pointing the tag.
+
+Docs-only commits landing after a tag simply ride at the current version until
+the next bump. They are not part of the tagged release, and that is fine.
 
 ### Changelog entries
 
