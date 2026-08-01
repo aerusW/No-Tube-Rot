@@ -80,6 +80,25 @@ Walk the surfaces your change touches:
 
 Please say in the PR which browser and which pages you actually checked.
 
+### Automated checks
+
+CI runs on every push and pull request, and you can run exactly the same checks
+locally before you push:
+
+```bash
+python .github/scripts/checks.py            # everything except the bump rules
+python .github/scripts/checks.py --base main   # also check the version bump
+```
+
+It verifies that `manifest.json` and `rules.json` parse, that every file the
+manifest references exists, that the issue forms are valid YAML, that the
+version is three-component and matches the newest `CHANGELOG.md` entry, that a
+bump never reuses an already-tagged version, and that no `console.log` or
+`debugger` made it into `content.js`.
+
+These are the mistakes that are invisible in review and obvious in hindsight —
+the versioning rules above are enforced here rather than left to memory.
+
 ### Writing selectors that survive
 
 YouTube renames custom elements and reshuffles attributes often. Two rules keep
