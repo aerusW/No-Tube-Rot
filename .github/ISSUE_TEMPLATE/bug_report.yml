@@ -1,0 +1,126 @@
+name: 🐛 Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill in the sections below so it can
+        be reproduced quickly. **Firefox / Zen users:** loading the extension is
+        a known limitation tracked in
+        [#8](https://github.com/aerusW/No-Tube-Rot/issues/8) — please add to that
+        issue instead of opening a new one.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+      placeholder: The Shorts shelf still shows on... but I expected it to be hidden.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact path through YouTube that triggers it.
+      placeholder: |
+        1. Go to youtube.com
+        2. Search for "..."
+        3. Scroll to ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the extension?
+      options:
+        - "Redirect (homepage / Shorts URLs)"
+        - "Hiding Shorts"
+        - "Calm restyle (colours, buttons, sidebar)"
+        - "Watch page layout"
+        - "Installing / loading the extension"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: page
+    attributes:
+      label: Page it happens on
+      description: The YouTube page or URL shape — no need to share private links.
+      placeholder: youtube.com/results?search_query=... / a channel page / a watch page
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 141.0.7390.66 / Edge 141 / Brave 1.83
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 24H2 / Ubuntu 24.04 / macOS 15
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: The version shown on your browser's extensions page (or in `manifest.json`).
+      placeholder: "1.3.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: YouTube appearance setting
+      description: Found under your avatar → Appearance.
+      options:
+        - "Dark theme"
+        - "Light theme"
+        - "Use device theme"
+        - "Not relevant to this bug"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: For anything visual, a screenshot is worth more than a description. Drag an image in here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: |
+        Open DevTools (F12) → Console and paste anything red. This is
+        automatically formatted, so no backticks are needed.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: I reproduced this with all other YouTube-modifying extensions (ad blockers, themes) disabled.
+          required: false
+        - label: I'm running the latest version of `main`.
+          required: false

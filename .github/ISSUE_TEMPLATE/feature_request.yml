@@ -1,0 +1,48 @@
+name: 💡 Feature request
+description: Suggest an idea or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Please describe the problem before the solution.
+
+        Worth knowing up front: No-Tube-Rot deliberately has **no options page
+        and no settings**. Proposals that keep it install-once-and-forget have a
+        much better chance than ones that add configuration.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What is YouTube still doing that pulls your attention where you didn't want it?
+      placeholder: I keep getting drawn into... but I only opened YouTube to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should the extension do — hide a surface, redirect a URL, quiet an element?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you use today, or other approaches you thought about.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: This works without adding a settings screen.
+          required: false
