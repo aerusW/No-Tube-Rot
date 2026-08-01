@@ -95,7 +95,7 @@ it's there.
 ### Firefox · Zen
 
 > ⚠️ Firefox-based browsers don't load the extension yet — tracked in
-> [#8](https://github.com/aerusW/No-Tube-Rot/issues/8). Use a Chromium browser
+> [#1](https://github.com/aerusW/No-Tube-Rot/issues/1). Use a Chromium browser
 > for now.
 
 ## 🚀 Usage
