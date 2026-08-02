@@ -38,7 +38,7 @@ Lands you on your Subscriptions, deletes every Short, and repaints the interface
 
 ---
 
-## 📑 Contents
+## Contents
 
 [Why](#why) · [What it does](#-what-it-does) · [Install](#-install) · [Usage](#-usage) · [Privacy](#-privacy) · [Under the hood](#-under-the-hood) · [Contributing](#-contributing) · [License](#license)
 
@@ -57,25 +57,25 @@ leaves the rest of YouTube alone.
 **No popups. No settings. No account. No tracking.** Load it once and forget
 it's there.
 
-## ✨ What it does
+## What it does
 
-* 🎯 **Opens on your subscriptions, not the algorithm.** `youtube.com` takes you
+* **Opens on your subscriptions, not the algorithm.** `youtube.com` takes you
   straight to your Subscriptions feed — the channels you actually picked.
-* 🚫 **No Shorts, anywhere.** Gone from the home and subscription feeds, the
+* **No Shorts, anywhere.** Gone from the home and subscription feeds, the
   sidebar, channel pages, search results, and grids.
-* ▶️ **Shorts open as normal videos.** Click a Short from anywhere and it plays
+* **Shorts open as normal videos.** Click a Short from anywhere and it plays
   in the regular player — scrubber, playback speed, description, and no vertical
   swipe-feed.
-* 🌿 **A calmer interface.** YouTube's alarm-red is swapped for a single muted
+* **A calmer interface.** YouTube's alarm-red is swapped for a single muted
   sage accent, surfaces are flat solid colours, and loud buttons are quieted
   down. Works in both YouTube themes — it follows your light/dark setting,
   including "Use device theme".
-* 📚 **A focused sidebar.** Trimmed to Home, Subscriptions and You — no Explore,
+* **A focused sidebar.** Trimmed to Home, Subscriptions and You — no Explore,
   no "More from YouTube", no promos.
-* 🎬 **Watch pages without the noise.** The recommended "up next" column is
+* **Watch pages without the noise.** The recommended "up next" column is
   removed and the video widens to fill the space.
 
-## 📦 Install
+## Install
 
 ### Chrome · Edge · Brave · any Chromium browser
 
@@ -94,11 +94,11 @@ it's there.
 
 ### Firefox · Zen
 
-> ⚠️ Firefox-based browsers don't load the extension yet — tracked in
+> Firefox-based browsers don't load the extension yet — tracked in
 > [#1](https://github.com/aerusW/No-Tube-Rot/issues/1). Use a Chromium browser
 > for now.
 
-## 🚀 Usage
+## Usage
 
 There's nothing to configure. Once it's installed, just use YouTube normally:
 
@@ -112,7 +112,7 @@ There's nothing to configure. Once it's installed, just use YouTube normally:
 To pause it, disable the extension on your browser's extensions page. To remove
 it, delete it from that list.
 
-## 🔒 Privacy
+## Privacy
 
 The extension makes **no network requests of its own**, stores nothing, and has
 no analytics, no account, and no remote configuration. Everything happens
@@ -126,7 +126,7 @@ locally in your browser, on `www.youtube.com` and nowhere else.
 There is no background service worker and no `storage` permission. If a future
 change needed either, it would be called out in the [changelog](CHANGELOG.md).
 
-## 🔧 Under the hood
+## Under the hood
 
 Four small files, no build step, no dependencies — under 20 KB in total.
 
@@ -142,7 +142,7 @@ YouTube reshapes its DOM constantly, so selectors are matched on stable hooks �
 fragile carries a comment explaining what forced it. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full conventions.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are very welcome — especially reports that a selector has stopped
 matching, since YouTube breaks them regularly. See
@@ -150,9 +150,9 @@ matching, since YouTube breaks them regularly. See
 surfaces, and how to open a pull request. Please also read our
 **[Code of Conduct](CODE_OF_CONDUCT.md)**.
 
-* 🐛 [Report a bug](../../issues/new?template=bug_report.yml)
-* 💡 [Request a feature](../../issues/new?template=feature_request.yml)
-* 📜 [Changelog](CHANGELOG.md)
+* [Report a bug](../../issues/new?template=bug_report.yml)
+* [Request a feature](../../issues/new?template=feature_request.yml)
+* [Changelog](CHANGELOG.md)
 
 ## License
 
