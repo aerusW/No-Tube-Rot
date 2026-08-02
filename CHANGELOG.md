@@ -11,12 +11,18 @@ All notable changes to this project are documented here. Versions match the
 > history was renumbered to a single consistent scheme, so the numbers below are
 > the canonical ones. Earlier clones may show `1.0`, `1.1`, `1.2`, `1.2.1` and
 > `1.2.2` for the same changes.
-## 1.3.4 2026-08-02
-Repository, documentation and community polish — **no functional changes.**
-The extension behaves exactly as it did in 1.3.3.
+
+## 1.3.4 — 2026-08-02
+
+Documentation only — **no functional changes.** The extension behaves exactly
+as it did in 1.3.3.
 
 ### Documentation
-* Remove ugly emoji's so [@GitAlexein](https://github.com/GitAlexein) can stop complaining
+
+* Removed the emoji from the README headings and feature list
+  ([#4](https://github.com/aerusW/No-Tube-Rot/pull/4), thanks
+  [@GitAlexein](https://github.com/GitAlexein)).
+* Fixed the contents menu links, which pointed at the old emoji anchors.
 
 ## 1.3.3 — 2026-08-01
 

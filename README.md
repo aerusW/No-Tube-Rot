@@ -40,7 +40,7 @@ Lands you on your Subscriptions, deletes every Short, and repaints the interface
 
 ## Contents
 
-[Why](#why) · [What it does](#-what-it-does) · [Install](#-install) · [Usage](#-usage) · [Privacy](#-privacy) · [Under the hood](#-under-the-hood) · [Contributing](#-contributing) · [License](#license)
+[Why](#why) · [What it does](#what-it-does) · [Install](#install) · [Usage](#usage) · [Privacy](#privacy) · [Under the hood](#under-the-hood) · [Contributing](#contributing) · [License](#license)
 
 ---
 
