@@ -7,10 +7,14 @@ body:
     attributes:
       value: |
         Thanks for reporting a bug! Please fill in the sections below so it can
-        be reproduced quickly. **Firefox / Zen users:** loading the extension is
-        a known limitation tracked in
-        [#1](https://github.com/aerusW/No-Tube-Rot/issues/1) — please add to that
-        issue instead of opening a new one.
+        be reproduced quickly.
+
+        **Firefox / Zen users:** if the extension won't load from a folder you
+        have also used in Chrome, delete the `_metadata/` directory Chrome
+        created inside it — Firefox rejects reserved underscore-prefixed names.
+        Installing the signed `.xpi` from the
+        [latest release](https://github.com/aerusW/No-Tube-Rot/releases/latest)
+        avoids this entirely.
 
   - type: textarea
     id: what-happened

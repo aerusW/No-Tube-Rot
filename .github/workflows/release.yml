@@ -1,0 +1,94 @@
+name: Release
+
+# Pushing a vX.Y.Z tag publishes the release. Two artifacts go out:
+#
+#   no-tube-rot-X.Y.Z.zip   Chromium — load unpacked, or unzip and Load unpacked
+#   no-tube-rot-X.Y.Z.xpi   Firefox / Zen — signed by Mozilla, installs permanently
+#
+# Firefox refuses to install an unsigned .xpi, and the signature-requirement
+# override only exists on Developer Edition, Nightly and ESR. So signing is the
+# only route to a permanent Firefox install. The unlisted channel signs without
+# a public review queue; the add-on is hosted here, not on addons.mozilla.org.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # needed to create the release and attach assets
+
+jobs:
+  release:
+    name: Package, sign and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      # The tag is what names the release, the manifest is what users end up
+      # running. CONTRIBUTING.md requires them to match; catch it here rather
+      # than shipping an .xpi whose version disagrees with its tag.
+      - name: Tag must match the manifest version
+        id: version
+        run: |
+          manifest=$(python -c "import json;print(json.load(open('manifest.json'))['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$manifest" != "$tag" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match manifest.json version $manifest"
+            exit 1
+          fi
+          echo "version=$manifest" >> "$GITHUB_OUTPUT"
+
+      # Never publish something that would fail the checks on main.
+      - name: Run checks
+        run: python .github/scripts/checks.py
+
+      - name: Package
+        run: python .github/scripts/package.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web-ext
+        run: npm install --global web-ext
+
+      # Sign dist/staging, not the repository root. web-ext's own ignore rules
+      # are a denylist, and a denylist is exactly what let Chrome's generated
+      # _metadata/ folder break the Firefox load in the first place (issue #1).
+      # package.py builds staging from an allowlist derived from the manifest.
+      - name: Sign for Firefox
+        run: |
+          web-ext sign \
+            --channel=unlisted \
+            --source-dir dist/staging \
+            --artifacts-dir dist \
+            --api-key "$AMO_JWT_ISSUER" \
+            --api-secret "$AMO_JWT_SECRET"
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
+      - name: Normalise the .xpi filename
+        run: mv dist/*.xpi "dist/no-tube-rot-${{ steps.version.outputs.version }}.xpi"
+
+      - name: Release notes from the changelog
+        run: python .github/scripts/release_notes.py "${{ steps.version.outputs.version }}" > dist/notes.md
+
+      - name: Publish
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file dist/notes.md \
+            "dist/no-tube-rot-${{ steps.version.outputs.version }}.zip" \
+            "dist/no-tube-rot-${{ steps.version.outputs.version }}.xpi"
+        env:
+          GH_TOKEN: ${{ github.token }}

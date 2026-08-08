@@ -9,7 +9,7 @@
 Lands you on your Subscriptions, deletes every Short, and repaints the interface in calm, muted tones — so nothing on the page is fighting for your next click.
 
 ![Manifest V3](https://img.shields.io/badge/manifest-v3-4285F4?logo=googlechrome&logoColor=white)
-![Chrome · Edge · Brave](https://img.shields.io/badge/browsers-Chrome%20%C2%B7%20Edge%20%C2%B7%20Brave-0078D6)
+![Chrome · Edge · Brave · Firefox](https://img.shields.io/badge/browsers-Chrome%20%C2%B7%20Edge%20%C2%B7%20Brave%20%C2%B7%20Firefox-0078D6)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![No tracking](https://img.shields.io/badge/tracking-none-brightgreen)
 ![Size](https://img.shields.io/badge/size-under%2020%20KB-lightgrey)
@@ -89,14 +89,45 @@ it's there.
 4. Click **Load unpacked** and select the `No-Tube-Rot` folder.
 5. Open YouTube. You'll land on your Subscriptions.
 
+> Prefer a fixed version over the moving `main` branch? Every release ships a
+> `.zip` on the [releases page](https://github.com/aerusW/No-Tube-Rot/releases) —
+> unzip it and load that folder instead.
+
 > Store listings aren't published yet. Loading unpacked is the supported route
 > for now, and it means you can read every line of what you're installing.
 
 ### Firefox · Zen
 
-> Firefox-based browsers don't load the extension yet — tracked in
-> [#1](https://github.com/aerusW/No-Tube-Rot/issues/1). Use a Chromium browser
-> for now.
+1. Download **`no-tube-rot-<version>.xpi`** from the
+   [latest release](https://github.com/aerusW/No-Tube-Rot/releases/latest).
+2. Open Firefox and drag the `.xpi` onto the window — or use
+   **☰ → Add-ons and themes → ⚙ → Install Add-on From File…**
+3. Confirm the install prompt.
+4. Open YouTube. You'll land on your Subscriptions.
+
+The `.xpi` is signed by Mozilla, so it installs permanently and survives
+restarts. It's distributed here rather than through addons.mozilla.org, which
+has one consequence worth knowing:
+
+> **Firefox installs don't update themselves.** To move to a newer version,
+> download the new `.xpi` and install it over the top. Watch the
+> [releases page](https://github.com/aerusW/No-Tube-Rot/releases) — YouTube
+> changes its markup often, and an out-of-date copy shows up as Shorts quietly
+> reappearing.
+
+**From source instead:** open `about:debugging#/runtime/this-firefox` →
+**Load Temporary Add-on…** → pick `manifest.json` in the repo folder. This is
+the development route; a temporary add-on is gone on the next restart. If you
+have also loaded the same folder in Chrome, see the
+[note below](#a-note-for-anyone-using-both-browsers).
+
+### A note for anyone using both browsers
+
+Loading the repo folder in Chrome makes it write a `_metadata/` directory
+inside. Firefox rejects any extension containing reserved underscore-prefixed
+names, so **that folder will no longer load in Firefox** until you delete
+`_metadata/`. Use separate folders per browser, or install from the release
+artifacts above, which never contain it.
 
 ## Usage
 

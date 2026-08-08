@@ -1,11 +1,20 @@
-# Created by Chrome when loading the folder as an unpacked extension
+# Created by Chrome when loading the folder as an unpacked extension.
+# Leave it out of any package: Firefox rejects extensions containing reserved
+# underscore-prefixed names, which is what made the add-on look broken there.
 _metadata/
 
 # Packaged builds
+dist/
 *.zip
 *.crx
 *.pem
 *.xpi
+
+# Python bytecode from the .github/scripts helpers. The scripts set
+# sys.dont_write_bytecode, so this should stay empty — it's a backstop, because
+# __pycache__/ is another reserved underscore name in a folder that gets loaded
+# as an extension.
+__pycache__/
 
 # Editor / OS noise
 .vscode/

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 🦊 Firefox / Zen support
-    url: https://github.com/aerusW/No-Tube-Rot/issues/1
-    about: Firefox-based browsers don't load the extension yet — follow this issue.
+  - name: 🦊 Firefox / Zen install
+    url: https://github.com/aerusW/No-Tube-Rot/releases/latest
+    about: Download the signed .xpi and drag it into Firefox. Installs permanently.
   - name: 📖 Installation & usage
     url: https://github.com/aerusW/No-Tube-Rot#install
     about: How to load the extension, and what it changes once it's on.
