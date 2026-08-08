@@ -43,6 +43,21 @@ def git(*args: str) -> str | None:
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+def referenced_files(manifest: dict) -> list[str]:
+    """Every file manifest.json points at, as repo-relative paths.
+
+    Shared with package.py, which uses it as the allowlist for what goes into a
+    release archive. Keeping one definition means a new manifest key can never
+    be validated here but silently left out of the package — or the reverse.
+    """
+    referenced = list(manifest.get("icons", {}).values())
+    for entry in manifest.get("content_scripts", []):
+        referenced += entry.get("css", []) + entry.get("js", [])
+    for res in manifest.get("declarative_net_request", {}).get("rule_resources", []):
+        referenced.append(res.get("path", ""))
+    return [rel for rel in referenced if rel]
+
+
 def check_json() -> dict:
     print("\nJSON parses")
     manifest = {}
@@ -67,13 +82,9 @@ def check_manifest(manifest: dict) -> str:
         if field not in manifest:
             fail(f"manifest.json is missing '{field}'")
     # every file the manifest points at must exist
-    referenced = list(manifest.get("icons", {}).values())
-    for entry in manifest.get("content_scripts", []):
-        referenced += entry.get("css", []) + entry.get("js", [])
-    for res in manifest.get("declarative_net_request", {}).get("rule_resources", []):
-        referenced.append(res.get("path", ""))
+    referenced = referenced_files(manifest)
     for rel in referenced:
-        if rel and not (ROOT / rel).exists():
+        if not (ROOT / rel).exists():
             fail(f"manifest.json references missing file: {rel}")
     if not failures:
         ok(f"{len(referenced)} referenced files all exist")

@@ -56,13 +56,33 @@ cd No-Tube-Rot
 2. Turn on **Developer mode** (top-right).
 3. Click **Load unpacked** and select the repository folder.
 
-**After each edit:** press the ↻ reload button on the extension card, then
-hard-reload the YouTube tab (`Ctrl`/`Cmd` + `Shift` + `R`). CSS changes usually
-show up on a plain reload; `manifest.json` and `rules.json` changes always need
-the extension reloaded first.
+**Load it in Firefox / Zen:**
 
-> Loading the folder as an unpacked extension makes Chrome create a `_metadata/`
-> directory inside it. That's expected, and it's already in `.gitignore`.
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on…** and select `manifest.json` in the folder.
+
+A temporary add-on is gone on the next restart — that's fine for development.
+Permanent installs come from the signed `.xpi` a release produces.
+
+**After each edit:** press the ↻ reload button on the extension card (Firefox:
+**Reload** on the add-on in `about:debugging`), then hard-reload the YouTube tab
+(`Ctrl`/`Cmd` + `Shift` + `R`). CSS changes usually show up on a plain reload;
+`manifest.json` and `rules.json` changes always need the extension reloaded
+first.
+
+> ### ⚠️ Don't load the same folder in both browsers
+>
+> Loading the folder as an unpacked extension makes Chrome create a
+> `_metadata/` directory inside it. It's gitignored and harmless to Chrome —
+> but Firefox **rejects any extension containing reserved underscore-prefixed
+> names**, so that folder will silently stop loading in Firefox until you
+> delete `_metadata/`.
+>
+> This cost the project a wrongly-open bug for months
+> ([#1](https://github.com/aerusW/No-Tube-Rot/issues/1)): the extension was
+> fine, the folder wasn't. Keep a separate clone per browser, or `rm -rf
+> _metadata/` before switching. Release artifacts are built from an allowlist
+> and never contain it.
 
 ---
 
@@ -77,6 +97,7 @@ Walk the surfaces your change touches:
 | Shorts hiding | Home, Subscriptions, search results, a channel page's tabs, the left sidebar and the collapsed mini sidebar. |
 | Calm restyle | Both YouTube themes — avatar → **Appearance** → Dark and Light. Check text contrast, not just background colour. |
 | Watch page | The recommended column is gone and the player widens; fullscreen and theatre mode still behave. |
+| Both engines | Chromium **and** Firefox. They diverge on extension packaging and on `declarativeNetRequest` support, so a change that works in one is not evidence about the other. |
 
 Please say in the PR which browser and which pages you actually checked.
 
@@ -128,6 +149,11 @@ hide-shorts.css    # every Shorts surface: shelves, sidebar entries, channel tab
 calm.css           # the calm restyle: one accent, flat surfaces, trimmed sidebar, no up-next column
 icons/             # 16 / 48 / 128 px extension icons
 docs/              # before/after screenshots used by the README
+
+.github/scripts/
+  checks.py        # the CI gates, runnable locally; also owns referenced_files()
+  package.py       # builds dist/staging + the .zip from the manifest's file list
+  release_notes.py # pulls one version's section out of CHANGELOG.md
 ```
 
 `rules.json` and `content.js` are intentionally redundant: the first covers URLs
@@ -175,23 +201,48 @@ right matters more than any other rule here.
 
 ### Cutting a release
 
-Every change to a shipped file is effectively released the moment it lands on
-`main`, because installing means loading this folder unpacked. So the release
-happens with the merge, not after it:
+For Chromium users who install by loading this folder unpacked, every change to
+a shipped file is effectively released the moment it lands on `main`. Firefox
+users install a signed `.xpi`, which only exists once a tag is pushed — so the
+tag is a real publishing event, not just a bookmark.
 
 ```bash
 # 1. version + changelog land in the same commit as the change
-#    manifest.json -> "version": "1.3.4"
-#    CHANGELOG.md  -> ## 1.3.4 — YYYY-MM-DD, with Added / Changed / Fixed
+#    manifest.json -> "version": "1.3.5"
+#    CHANGELOG.md  -> ## 1.3.5 — YYYY-MM-DD, with Added / Changed / Fixed
 
 # 2. after the PR merges, tag the merge point and push
 git checkout main && git pull
-git tag -a v1.3.4 -m "v1.3.4"
-git push origin v1.3.4
-
-# 3. publish the release notes from the changelog section
-gh release create v1.3.4 --title "v1.3.4" --notes-file <(...)
+git tag -a v1.3.5 -m "v1.3.5"
+git push origin v1.3.5
 ```
+
+Pushing the tag is the whole release. `.github/workflows/release.yml` then:
+
+1. checks the tag matches `manifest.json` — a mismatch fails the run;
+2. re-runs `checks.py`, so a broken tree never ships;
+3. runs `package.py` to build `dist/staging` and the `.zip`;
+4. signs `dist/staging` with `web-ext sign --channel=unlisted`, producing a
+   Mozilla-signed `.xpi`;
+5. creates the GitHub release with notes read from `CHANGELOG.md` and both
+   artifacts attached.
+
+You can rehearse steps 3 and 5 locally:
+
+```bash
+python .github/scripts/package.py            # -> dist/
+python .github/scripts/release_notes.py 1.3.5
+```
+
+Signing needs `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository secrets, from
+[addons.mozilla.org API credentials](https://addons.mozilla.org/en-US/developers/addon/api/key/).
+**AMO refuses to sign a version number it has already seen**, so the rule about
+never reusing a released version is enforced by Mozilla too, not just by
+`checks.py`.
+
+> The signing step puts Node in CI. The contributor loop is unaffected — editing
+> a file and reloading the extension is still the whole thing, with no build
+> step and no dependencies.
 
 Tag names are the manifest version prefixed with `v`, and **a tag never moves
 once it is pushed.** Checking out `v1.3.2` must always give the exact tree that

@@ -12,6 +12,49 @@ All notable changes to this project are documented here. Versions match the
 > the canonical ones. Earlier clones may show `1.0`, `1.1`, `1.2`, `1.2.1` and
 > `1.2.2` for the same changes.
 
+## 1.3.5 — 2026-08-08
+
+Packaging and documentation — **no functional changes.** The extension behaves
+exactly as it did in 1.3.4, on every browser.
+
+### Fixed
+
+* **Firefox and Zen were never actually broken** ([#1](https://github.com/aerusW/No-Tube-Rot/issues/1)).
+  The extension had been reported as failing to load on Firefox-based browsers
+  since launch. The cause was not in the extension: loading the repository
+  folder in Chrome makes Chrome write a generated `_metadata/` directory into
+  it, and Firefox rejects any extension containing reserved
+  underscore-prefixed names. Testing both browsers from one folder therefore
+  broke Firefox, while a clean checkout works unmodified. No source change was
+  needed — `declarativeNetRequest`, the `regexFilter` rules and
+  `strict_min_version` were all fine as they stood.
+
+### Added
+
+* **Signed Firefox releases.** Every tag now publishes a Mozilla-signed `.xpi`
+  alongside the Chromium `.zip`. Firefox refuses unsigned add-ons, and
+  `about:debugging` only ever produced a temporary add-on that vanished on
+  restart — so this is the first permanent Firefox install the project has had.
+  Distributed from the releases page rather than addons.mozilla.org, which
+  means Firefox installs must be updated by hand.
+* **A release workflow** (`.github/workflows/release.yml`) that verifies the tag
+  matches the manifest, re-runs the checks, packages, signs and publishes.
+* **`package.py`**, which builds the release archive from an allowlist derived
+  from `manifest.json`. `_metadata/` and anything else untracked cannot end up
+  in a package by construction — the bug above cannot recur.
+* **`release_notes.py`**, so release bodies are read from `CHANGELOG.md`
+  instead of written twice.
+
+### Documentation
+
+* A real **Firefox · Zen install section** in the README, replacing the notice
+  saying Firefox was unsupported.
+* A prominent **warning in CONTRIBUTING** against loading one folder in both
+  browsers — the trap that caused all of this.
+* Firefox added to the browser badge, the issue chooser and the bug form; both
+  templates no longer describe Firefox as broken.
+* Both engines added to the manual test table.
+
 ## 1.3.4 — 2026-08-02
 
 Documentation only — **no functional changes.** The extension behaves exactly
