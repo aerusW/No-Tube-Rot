@@ -88,7 +88,50 @@ first.
 
 ## Testing a change
 
-There is no automated suite — verification is manual, on a live YouTube session.
+Two halves, and they cover different things. The automated suite answers
+questions that don't need a browser — does this rule redirect the URL it says
+it does, do both themes still clear the contrast bar, did a permission appear.
+Everything about whether a selector still matches YouTube's current DOM is
+manual, because only a browser knows.
+
+### The automated suite
+
+```bash
+python tests/run.py          # everything
+python tests/run.py -v       # name every test as it runs
+python tests/run.py -k shorts   # only tests matching "shorts"
+```
+
+No packages to install. The Python tests run on `unittest` and the content
+script's tests on Node's built-in runner (`node --test`), so a working Python
+and a working Node are the whole setup — and if Node is missing, the
+JavaScript half is skipped with a note rather than failing.
+
+```
+tests/run.py              the entry point above
+tests/support.py          fixtures and helpers; no tests live here
+tests/test_rules.py       what each declarativeNetRequest rule does to a URL
+tests/test_stylesheets.py stylesheet structure, palette parity, WCAG contrast
+tests/test_manifest.py    the permission surface and the packaging details
+tests/test_checks_script.py    checks.py, fed deliberately broken repositories
+tests/test_package_script.py   what ends up in a release archive, and what can't
+tests/test_release_notes.py    the changelog section a release publishes
+tests/js/content.test.js  content.js, in a fake DOM under node:vm
+```
+
+The two redirect suites are worth knowing about together. `rules.json` and
+`content.js` do the same job on different paths — one on hard loads, one on
+YouTube's in-app router — so they are tested against the same URLs, and they
+must agree about where each one ends up.
+
+**Adding tests.** A new redirect rule belongs in `test_rules.py` next to the
+URLs it should and shouldn't touch; a new palette variable is covered by
+`test_stylesheets.py` automatically, contrast included. Selector changes are
+the exception — asserting that a string appears in a stylesheet proves nothing
+about YouTube's DOM, so those are verified in a browser instead.
+
+### In a browser
+
 Walk the surfaces your change touches:
 
 | Area | Check |
@@ -101,10 +144,9 @@ Walk the surfaces your change touches:
 
 Please say in the PR which browser and which pages you actually checked.
 
-### Automated checks
+### Repository checks
 
-CI runs on every push and pull request, and you can run exactly the same checks
-locally before you push:
+Separate from the tests, and about the repository rather than the extension:
 
 ```bash
 python .github/scripts/checks.py            # everything except the bump rules
@@ -117,8 +159,32 @@ version is three-component and matches the newest `CHANGELOG.md` entry, that a
 bump never reuses an already-tagged version, and that no `console.log` or
 `debugger` made it into `content.js`.
 
+It also looks for underscore-prefixed names anywhere in the tree, because one
+`_metadata/` is enough to stop the whole folder loading in Firefox. An ignored
+one — Chrome's `_metadata/`, a stray `__pycache__/` — is a **warning**, since
+loading this folder in Chrome is a supported thing to do and generated files
+can't reach a release. It still means Firefox won't touch the folder until you
+delete it. A committed one is a failure.
+
 These are the mistakes that are invisible in review and obvious in hindsight —
 the versioning rules above are enforced here rather than left to memory.
+
+### What CI runs
+
+Every push and pull request runs three jobs, all of which you can run yourself:
+
+| Job | Command |
+|---|---|
+| Manifest, changelog and versioning | `python .github/scripts/checks.py --base main` |
+| Test suite | `python tests/run.py` |
+| Release scripts run on this tree | `python .github/scripts/package.py` and `release_notes.py <version>` |
+
+The third exists because the packaging and release-notes scripts otherwise
+only run when a tag is pushed — the one moment they cannot be fixed and retried
+under the same version. It builds the archive on every push and attaches it to
+the run, so `dist/no-tube-rot-<version>.zip` from any commit is a download away.
+
+A tag runs all of it again before signing anything.
 
 ### Writing selectors that survive
 
@@ -150,6 +216,7 @@ calm.css           # the calm restyle: one accent, flat surfaces, trimmed sideba
 icons/             # 16 / 48 / 128 px extension icons
 docs/              # before/after screenshots used by the README
 
+tests/             # the automated suite — nothing here ships
 .github/scripts/
   checks.py        # the CI gates, runnable locally; also owns referenced_files()
   package.py       # builds dist/staging + the .zip from the manifest's file list
@@ -208,30 +275,34 @@ tag is a real publishing event, not just a bookmark.
 
 ```bash
 # 1. version + changelog land in the same commit as the change
-#    manifest.json -> "version": "1.3.5"
-#    CHANGELOG.md  -> ## 1.3.5 — YYYY-MM-DD, with Added / Changed / Fixed
+#    manifest.json -> "version": "1.3.6"
+#    CHANGELOG.md  -> ## 1.3.6 — YYYY-MM-DD, with Added / Changed / Fixed
 
 # 2. after the PR merges, tag the merge point and push
 git checkout main && git pull
-git tag -a v1.3.5 -m "v1.3.5"
-git push origin v1.3.5
+git tag -a v1.3.6 -m "v1.3.6"
+git push origin v1.3.6
 ```
 
 Pushing the tag is the whole release. `.github/workflows/release.yml` then:
 
 1. checks the tag matches `manifest.json` — a mismatch fails the run;
-2. re-runs `checks.py`, so a broken tree never ships;
+2. re-runs `checks.py` and the test suite, so a broken tree never ships;
 3. runs `package.py` to build `dist/staging` and the `.zip`;
 4. signs `dist/staging` with `web-ext sign --channel=unlisted`, producing a
    Mozilla-signed `.xpi`;
 5. creates the GitHub release with notes read from `CHANGELOG.md` and both
    artifacts attached.
 
-You can rehearse steps 3 and 5 locally:
+Everything except the signing runs on every push too, so a tag should be
+confirming what CI already said rather than finding out. You can rehearse it
+locally:
 
 ```bash
+python tests/run.py
+python .github/scripts/checks.py
 python .github/scripts/package.py            # -> dist/
-python .github/scripts/release_notes.py 1.3.5
+python .github/scripts/release_notes.py 1.3.6
 ```
 
 Signing needs `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository secrets, from
@@ -240,9 +311,11 @@ Signing needs `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository secrets, from
 never reusing a released version is enforced by Mozilla too, not just by
 `checks.py`.
 
-> The signing step puts Node in CI. The contributor loop is unaffected — editing
-> a file and reloading the extension is still the whole thing, with no build
-> step and no dependencies.
+> Node is in CI twice over — `web-ext` signs the `.xpi`, and `node --test` runs
+> the content script's tests. Neither reaches the extension: nothing is bundled,
+> minified or generated, and the files in a release are byte-for-byte the files
+> in the repository. Editing one and reloading the extension is still the whole
+> contributor loop.
 
 Tag names are the manifest version prefixed with `v`, and **a tag never moves
 once it is pushed.** Checking out `v1.3.2` must always give the exact tree that
@@ -270,12 +343,14 @@ not selectors.
    ```
 2. **Make your change.** Keep commits focused; write a clear, imperative commit
    subject (e.g. `Hide the Shorts shelf in search results`).
-3. **Verify it in a real browser** across the surfaces listed above.
-4. **Bump `version` in `manifest.json`** and add a **`CHANGELOG.md`** entry when
+3. **Run `python tests/run.py`** and add tests for anything a browser isn't
+   needed to judge — a redirect rule, a palette colour, the permission list.
+4. **Verify it in a real browser** across the surfaces listed above.
+5. **Bump `version` in `manifest.json`** and add a **`CHANGELOG.md`** entry when
    the change is user-visible.
-5. **Update the docs** (`README.md`, and the screenshots in `docs/` if the look
+6. **Update the docs** (`README.md`, and the screenshots in `docs/` if the look
    changed) where relevant.
-6. **Push** and open a pull request. Fill in the PR template and link any
+7. **Push** and open a pull request. Fill in the PR template and link any
    related issue.
 
 ### Code standards

@@ -47,16 +47,21 @@ jobs:
           fi
           echo "version=$manifest" >> "$GITHUB_OUTPUT"
 
-      # Never publish something that would fail the checks on main.
-      - name: Run checks
-        run: python .github/scripts/checks.py
-
-      - name: Package
-        run: python .github/scripts/package.py
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # Never publish something that would fail on main. A release is the one
+      # thing that cannot be redone under the same version — AMO refuses to
+      # sign a version it has already seen — so both gates run again here.
+      - name: Run checks
+        run: python .github/scripts/checks.py
+
+      - name: Run the test suite
+        run: python tests/run.py
+
+      - name: Package
+        run: python .github/scripts/package.py
 
       - name: Install web-ext
         run: npm install --global web-ext

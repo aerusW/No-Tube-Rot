@@ -31,7 +31,7 @@
       "redirect": { "regexSubstitution": "https://www.youtube.com/watch?v=\\1" }
     },
     "condition": {
-      "regexFilter": "^https://www\\.youtube\\.com/shorts/([\\w-]+)",
+      "regexFilter": "^https://www\\.youtube\\.com/shorts/([\\w-]+).*$",
       "resourceTypes": ["main_frame"]
     }
   }
