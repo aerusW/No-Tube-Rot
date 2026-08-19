@@ -38,3 +38,73 @@ jobs:
 
       - name: Run checks
         run: python .github/scripts/checks.py --base "${{ steps.base.outputs.ref }}"
+
+  tests:
+    name: Test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # The suite needs no packages — Python's unittest and Node's built-in
+      # test runner, the same two things a contributor already has. Node is
+      # here because the content script is JavaScript and testing it in
+      # anything else would be testing a translation of it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run the test suite
+        run: python tests/run.py --verbose
+
+  # The scripts that build a release only run when a tag is pushed, which is
+  # the worst moment to find out one of them is broken: the version they were
+  # given can never be re-released. So they are exercised on every push
+  # instead, against the tree as it stands.
+  release-scripts:
+    name: Release scripts run on this tree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(python -c "import json;print(json.load(open('manifest.json'))['version'])")
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        run: python .github/scripts/package.py
+
+      - name: Release notes for the current version
+        run: python .github/scripts/release_notes.py "${{ steps.version.outputs.value }}"
+
+      # What issue #1 actually was: an extension containing an
+      # underscore-prefixed path will not load in Firefox at all. package.py
+      # builds from an allowlist so this cannot happen — checked anyway, on the
+      # real archive rather than on the reasoning.
+      - name: The archive must contain no reserved names
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          archive = glob.glob("dist/*.zip")[0]
+          names = zipfile.ZipFile(archive).namelist()
+          bad = [n for n in names if any(p.startswith("_") for p in n.split("/"))]
+          if bad:
+              print(f"::error::{archive} contains reserved paths: {', '.join(bad)}")
+              sys.exit(1)
+          print(f"{archive}: {len(names)} files, none reserved")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: no-tube-rot-${{ steps.version.outputs.value }}-unsigned
+          path: dist/no-tube-rot-${{ steps.version.outputs.value }}.zip
+          if-no-files-found: error

@@ -8,6 +8,7 @@
 
 Lands you on your Subscriptions, deletes every Short, and repaints the interface in calm, muted tones — so nothing on the page is fighting for your next click.
 
+[![Checks](https://github.com/aerusW/No-Tube-Rot/actions/workflows/checks.yml/badge.svg)](https://github.com/aerusW/No-Tube-Rot/actions/workflows/checks.yml)
 ![Manifest V3](https://img.shields.io/badge/manifest-v3-4285F4?logo=googlechrome&logoColor=white)
 ![Chrome · Edge · Brave · Firefox](https://img.shields.io/badge/browsers-Chrome%20%C2%B7%20Edge%20%C2%B7%20Brave%20%C2%B7%20Firefox-0078D6)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
@@ -173,12 +174,21 @@ YouTube reshapes its DOM constantly, so selectors are matched on stable hooks �
 fragile carries a comment explaining what forced it. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full conventions.
 
+A test suite in `tests/` covers the parts that don't need a browser to judge:
+which URLs each redirect rule fires on and where they land, that the two
+redirect paths agree, that both theme palettes clear WCAG AA contrast, and that
+the permission list is still the two entries above. It runs on Python's
+`unittest` and Node's built-in test runner — `python tests/run.py`, nothing to
+install — and CI runs it on every push. None of it ships: the release archive
+is built from an allowlist of exactly the files in the table above.
+
 ## Contributing
 
 Contributions are very welcome — especially reports that a selector has stopped
 matching, since YouTube breaks them regularly. See
-**[CONTRIBUTING.md](CONTRIBUTING.md)** for the dev loop, the manual test
-surfaces, and how to open a pull request. Please also read our
+**[CONTRIBUTING.md](CONTRIBUTING.md)** for the dev loop, the test suite
+(`python tests/run.py`), the surfaces to walk in a browser, and how to open a
+pull request. Please also read our
 **[Code of Conduct](CODE_OF_CONDUCT.md)**.
 
 * [Report a bug](../../issues/new?template=bug_report.yml)

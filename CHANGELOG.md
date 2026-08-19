@@ -12,6 +12,46 @@ All notable changes to this project are documented here. Versions match the
 > the canonical ones. Earlier clones may show `1.0`, `1.1`, `1.2`, `1.2.1` and
 > `1.2.2` for the same changes.
 
+## 1.3.6 — 2026-08-17
+
+### Fixed
+
+* **Shorts opened from a share link now play.** A Short reached by a typed or
+  pasted URL carrying a query string — `youtube.com/shorts/<id>?feature=share`,
+  which is exactly what YouTube's own share sheet produces, or a link with a
+  timestamp — redirected to a watch page that could not load. The redirect rule
+  matched the URL only as far as the video id, and a `declarativeNetRequest`
+  substitution replaces just the part it matched, so the original query string
+  stayed on the end: `watch?v=<id>?feature=share`, which YouTube reads as an id
+  that doesn't exist. Shorts opened from inside YouTube were never affected,
+  and neither were plain `/shorts/<id>` links.
+
+### Project
+
+* **A test suite** (`tests/`), covering the redirect rules and the content
+  script — including the bug above, which is the kind that only shows up on a
+  URL nobody types by hand — the stylesheet palettes and their contrast, the
+  permission surface, and the three release scripts. It runs on Python's
+  `unittest` and Node's built-in test runner, so it needs nothing installed:
+  `python tests/run.py`.
+* **CI runs it on every push and pull request**, alongside the existing
+  manifest and versioning checks, and again before anything is published.
+* **The release scripts are now exercised on every push** rather than for the
+  first time during a release, which is the one moment they cannot be fixed
+  and retried under the same version.
+* **`checks.py` reports reserved underscore-prefixed names** anywhere in the
+  tree — a warning for a generated one, a failure for a committed one. Chrome
+  writes `_metadata/` into any folder it loads unpacked and Firefox then
+  refuses to load that folder at all: the trap behind
+  [#1](https://github.com/aerusW/No-Tube-Rot/issues/1), now visible locally
+  instead of arriving as a bug report.
+
+### Documentation
+
+* CONTRIBUTING describes the test suite and how to run it, replacing the note
+  that verification was manual only. The manual test table stays: it covers
+  what a browser has to answer for, which is most of this project.
+
 ## 1.3.5 — 2026-08-08
 
 Packaging and documentation — **no functional changes.** The extension behaves

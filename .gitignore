@@ -10,10 +10,11 @@ dist/
 *.pem
 *.xpi
 
-# Python bytecode from the .github/scripts helpers. The scripts set
-# sys.dont_write_bytecode, so this should stay empty — it's a backstop, because
-# __pycache__/ is another reserved underscore name in a folder that gets loaded
-# as an extension.
+# Python bytecode from the .github/scripts helpers and the test suite. Both
+# set sys.dont_write_bytecode, so this should never match anything — it's a
+# backstop, because __pycache__/ is another reserved underscore name in a
+# folder that gets loaded as an extension. (Running the tests through
+# `python -m unittest` instead of tests/run.py is the way to create one.)
 __pycache__/
 
 # Editor / OS noise

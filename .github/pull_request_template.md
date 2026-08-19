@@ -27,6 +27,7 @@
 
 ## Checklist
 
+- [ ] `python tests/run.py` passes, and anything a browser isn't needed to judge (a redirect rule, a colour, the permission list) has a test
 - [ ] I loaded the unpacked extension and confirmed the change on a live YouTube session
 - [ ] I checked both YouTube themes (Appearance → Dark / Light) if the change is visual
 - [ ] I checked a hard page load **and** an in-app (SPA) navigation if the change touches redirects
