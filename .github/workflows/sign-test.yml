@@ -1,0 +1,126 @@
+name: Sign a test build
+
+# Signing is the one release step that cannot be rehearsed. The AMO credentials
+# exist only as repository secrets, so a contributor cannot produce a Firefox
+# .xpi locally at all — and the release workflow only runs on a vX.Y.Z tag,
+# which publishes a GitHub release and fixes a tag that must never move.
+#
+# Pushing a branch named sign/<version> signs the tree as it stands, under a
+# throwaway version, and attaches the .xpi to the run. It creates no tag and no
+# release. Delete the branch when you have the artifact.
+#
+#     git push origin HEAD:sign/1.99.0
+#
+# Pick a version that is lower than the next real release and that you are
+# happy to lose: AMO refuses to sign a version it has already seen, so every
+# test build burns one permanently. The job refuses outright to sign the
+# version in manifest.json, which is the one that must stay available.
+
+on:
+  push:
+    branches: ['sign/**']
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    name: Package and sign, without publishing anything
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      # A test build is still a build. Signing a tree that would fail on main
+      # wastes a version number that cannot be reclaimed.
+      - name: Checks
+        run: python .github/scripts/checks.py
+
+      - name: Test suite
+        run: python tests/run.py
+
+      - name: Work out the test version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#sign/}"
+          manifest=$(python -c "import json;print(json.load(open('manifest.json'))['version'])")
+
+          # Letters were once allowed in add-on versions and no longer are, so
+          # a pre-release suffix like 2.0.0rc1 is not an option here — AMO
+          # rejects it outright.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+(\.[0-9]+){1,3}$'; then
+            echo "::error::branch must be sign/<version> with 2 to 4"
+            echo "::error::dot-separated numbers, e.g. sign/1.99.0"
+            exit 1
+          fi
+
+          # The guard that matters: burning the real version on AMO would mean
+          # the actual release could never be signed.
+          if [ "$version" = "$manifest" ]; then
+            echo "::error::refusing to sign $version — that is the version in"
+            echo "::error::manifest.json, and AMO would never sign it again."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Signing as $version (manifest stays $manifest)"
+
+      # Built from the manifest's own allowlist, so nothing in the working tree
+      # can stow away — the reason issue #1 took months to find.
+      - name: Package
+        run: python .github/scripts/package.py
+
+      # Only the staged copy is retagged. The committed manifest is untouched,
+      # so the tree that gets signed is byte-for-byte the branch apart from
+      # this one field.
+      - name: Retag the staged copy
+        run: |
+          python - "${{ steps.version.outputs.version }}" <<'PY'
+          import json, pathlib, sys
+          staged = pathlib.Path("dist/staging/manifest.json")
+          repo = json.loads(pathlib.Path("manifest.json").read_text(encoding="utf-8"))
+          data = json.loads(staged.read_text(encoding="utf-8"))
+          data["version"] = sys.argv[1]
+          staged.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          differing = [k for k in set(repo) | set(data) if repo.get(k) != data.get(k)]
+          assert differing == ["version"], f"staged copy also differs in {differing}"
+          print(f"staged manifest: {repo['version']} -> {sys.argv[1]}")
+          PY
+
+      - name: Install web-ext
+        run: npm install --global web-ext
+
+      # Catches what AMO would reject, before a version is spent finding out.
+      - name: Lint as Firefox sees it
+        run: web-ext lint --source-dir dist/staging --output text
+
+      - name: Sign for Firefox
+        run: |
+          web-ext sign \
+            --channel=unlisted \
+            --source-dir dist/staging \
+            --artifacts-dir dist \
+            --api-key "$AMO_JWT_ISSUER" \
+            --api-secret "$AMO_JWT_SECRET"
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
+      - name: Normalise the .xpi filename
+        run: mv dist/*.xpi "dist/no-tube-rot-${{ steps.version.outputs.version }}.xpi"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: no-tube-rot-${{ steps.version.outputs.version }}-signed-xpi
+          path: dist/no-tube-rot-${{ steps.version.outputs.version }}.xpi
+          if-no-files-found: error
