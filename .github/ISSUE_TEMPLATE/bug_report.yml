@@ -46,6 +46,8 @@ body:
         - "Hiding Shorts"
         - "Calm restyle (colours, buttons, sidebar)"
         - "Watch page layout"
+        - "Picture-in-picture"
+        - "The settings menu"
         - "Installing / loading the extension"
         - "Not sure"
     validations:
@@ -81,7 +83,7 @@ body:
     attributes:
       label: Extension version
       description: The version shown on your browser's extensions page (or in `manifest.json`).
-      placeholder: "1.3.3"
+      placeholder: "2.0.0"
     validations:
       required: true
 

@@ -8,9 +8,11 @@ body:
       value: |
         Thanks for the idea! Please describe the problem before the solution.
 
-        Worth knowing up front: No-Tube-Rot deliberately has **no options page
-        and no settings**. Proposals that keep it install-once-and-forget have a
-        much better chance than ones that add configuration.
+        Worth knowing up front: since 2.0, everything No-Tube-Rot does is an
+        **individual switch that ships off**. A proposal has a much better
+        chance if it fits that shape — one switch, one behaviour, nothing
+        applied to anyone who didn't ask for it. Proposals to turn something
+        on by default are the hard sell, not proposals to add a switch.
 
   - type: textarea
     id: problem

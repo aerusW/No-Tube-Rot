@@ -1,5 +1,9 @@
 /*
- * Shorts hiding rules.
+ * Shorts hiding rules — one switch per surface.
+ *
+ * Every rule here is gated behind an attribute that content.js puts on <html>
+ * once it has read the settings, so this stylesheet is inert until something
+ * is switched on. Nothing in it applies on a fresh install.
  *
  * Note on matching: YouTube keeps "Shorts" as an untranslated brand name in
  * every locale (verified on an Italian UI, where "Subscriptions" shows as
@@ -8,45 +12,45 @@
  * singular ("Short"), so tab matching uses a case-insensitive prefix.
  */
 
-/* Shorts shelves on home/feed pages */
-ytd-rich-shelf-renderer[is-shorts],
-ytd-reel-shelf-renderer,
-ytd-shorts {
+/* ---- Shorts shelves on home/feed pages ---- */
+html[data-ntr-shorts-shelves] ytd-rich-shelf-renderer[is-shorts],
+html[data-ntr-shorts-shelves] ytd-reel-shelf-renderer,
+html[data-ntr-shorts-shelves] ytd-shorts {
   display: none !important;
 }
 
-/* Shorts shelves in search results.
+/* ---- Shorts shelves in search results ----
    These carry no shorts-specific tag or attribute — the shelf is a plain
    grid-shelf-view-model, so it has to be matched by what it holds. Hiding
    only the items inside left the "Shorts" header and its "Show more" button
    stranded between results, with gaps where the items had been. */
-grid-shelf-view-model:has(a[href*="/shorts/"]) {
+html[data-ntr-shorts-search] grid-shelf-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }
 
-/* Shorts entry in the left sidebar and mini sidebar.
+/* ---- Shorts entry in the left sidebar and mini sidebar ----
    The link no longer carries href="/shorts"; its title attribute does. */
-ytd-guide-entry-renderer:has(a[title="Shorts" i]),
-ytd-guide-entry-renderer:has(a[aria-label="Shorts" i]),
-ytd-mini-guide-entry-renderer:has(a[title="Shorts" i]),
-ytd-mini-guide-entry-renderer:has(a[aria-label="Shorts" i]) {
+html[data-ntr-shorts-sidebar] ytd-guide-entry-renderer:has(a[title="Shorts" i]),
+html[data-ntr-shorts-sidebar] ytd-guide-entry-renderer:has(a[aria-label="Shorts" i]),
+html[data-ntr-shorts-sidebar] ytd-mini-guide-entry-renderer:has(a[title="Shorts" i]),
+html[data-ntr-shorts-sidebar] ytd-mini-guide-entry-renderer:has(a[aria-label="Shorts" i]) {
   display: none !important;
 }
 
-/* Shorts tab on channel pages.
+/* ---- Shorts tab on channel pages ----
    The tab exposes no href/data hook, only localized (now singular) text, so
    a case-insensitive prefix on the English brand name is the stable option. */
-yt-tab-shape[tab-title^="Short" i] {
+html[data-ntr-shorts-tab] yt-tab-shape[tab-title^="Short" i] {
   display: none !important;
 }
 
-/* Individual Short items in video grids, lists and search results */
-ytd-video-renderer:has(a[href*="/shorts/"]),
-ytd-grid-video-renderer:has(a[href*="/shorts/"]),
-ytd-rich-item-renderer:has(a[href*="/shorts/"]),
-ytd-reel-item-renderer,
-ytm-shorts-lockup-view-model,
-ytm-shorts-lockup-view-model-v2,
-yt-lockup-view-model:has(a[href*="/shorts/"]) {
+/* ---- Individual Short items in video grids, lists and search results ---- */
+html[data-ntr-shorts-items] ytd-video-renderer:has(a[href*="/shorts/"]),
+html[data-ntr-shorts-items] ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+html[data-ntr-shorts-items] ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+html[data-ntr-shorts-items] ytd-reel-item-renderer,
+html[data-ntr-shorts-items] ytm-shorts-lockup-view-model,
+html[data-ntr-shorts-items] ytm-shorts-lockup-view-model-v2,
+html[data-ntr-shorts-items] yt-lockup-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }

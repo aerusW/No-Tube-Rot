@@ -1,11 +1,14 @@
 /*
  * Calm restyle: softer, less "addicting" colours, flat solid surfaces, fewer
- * loud buttons, a trimmed sidebar. Paired with the redirect + Shorts rules.
+ * loud buttons, a trimmed sidebar, no up-next column.
  *
- * One accent replaces YouTube's alarm-red everywhere it signals urgency
- * (progress bar, notification counts): a muted sage, chosen to read as calm
- * rather than a dopamine trigger. No gradients are introduced; the video
- * player's own control scrims are left alone so controls stay legible.
+ * Each of those is a separate switch, and every rule below is gated behind
+ * the attribute content.js sets for it once the settings have been read. On a
+ * fresh install none of them are set, so this stylesheet paints nothing.
+ *
+ * The palettes are the exception: they only define custom properties, which
+ * costs nothing and paints nothing on its own, so they are left ungated and
+ * whichever rules are switched on can read them.
  *
  * Theme: these rules repaint surfaces but deliberately never set body text
  * colour — YouTube's own text colours are already right for whichever theme
@@ -22,11 +25,9 @@
 html[dark] {
   --ntr-bg: #131314;        /* base, a touch off pure black */
   --ntr-surface: #1c1d20;   /* chips, search, cards */
-  --ntr-surface-2: #26272b; /* hover / raised */
+  --ntr-surface-2: #26272b; /* hover / raised / selected */
   --ntr-text: #ececec;      /* softened from pure white */
   --ntr-dim: #9aa0a6;
-  --ntr-accent: #6e9b94;    /* muted sage — the single accent */
-  --ntr-on-accent: #0d0f0f; /* text sitting on the accent */
   --ntr-border: rgba(255, 255, 255, 0.08);
   --ntr-logo-filter: grayscale(1) brightness(1.15);
 }
@@ -37,74 +38,141 @@ html:not([dark]) {
   --ntr-surface-2: #e1e0da;
   --ntr-text: #1d1d1f;
   --ntr-dim: #5f6368;
-  --ntr-accent: #4f7a73;    /* same sage, darkened to hold contrast on light */
-  --ntr-on-accent: #ffffff; /* near-black would only reach ~4:1 on the accent */
   --ntr-border: rgba(0, 0, 0, 0.1);
   --ntr-logo-filter: grayscale(1); /* the light-theme logo is already dark */
 }
 
+/* ---- Accents ----
+ * The single colour that replaces YouTube's alarm-red wherever it signals
+ * urgency. Each is given twice: a lighter mix to sit on the dark background
+ * and a darker one to hold contrast on the light background. On light,
+ * --ntr-on-accent is white — a near-black would only reach ~4:1 on these.
+ *
+ * All four clear WCAG AA against their own background and for text sitting on
+ * them, in both themes; tests/test_stylesheets.py holds every accent to that
+ * bar, so a new one cannot be added without meeting it. */
+html[dark][data-ntr-accent="sage"] {
+  --ntr-accent: #6e9b94;
+  --ntr-on-accent: #0d0f0f;
+}
+html:not([dark])[data-ntr-accent="sage"] {
+  --ntr-accent: #4f7a73;
+  --ntr-on-accent: #ffffff;
+}
+html[dark][data-ntr-accent="slate"] {
+  --ntr-accent: #8aa4c4;
+  --ntr-on-accent: #0d0f0f;
+}
+html:not([dark])[data-ntr-accent="slate"] {
+  --ntr-accent: #4a6d94;
+  --ntr-on-accent: #ffffff;
+}
+html[dark][data-ntr-accent="clay"] {
+  --ntr-accent: #c08f6e;
+  --ntr-on-accent: #0d0f0f;
+}
+html:not([dark])[data-ntr-accent="clay"] {
+  --ntr-accent: #8a5c3e;
+  --ntr-on-accent: #ffffff;
+}
+html[dark][data-ntr-accent="plum"] {
+  --ntr-accent: #a894c4;
+  --ntr-on-accent: #0d0f0f;
+}
+html:not([dark])[data-ntr-accent="plum"] {
+  --ntr-accent: #6e5a8c;
+  --ntr-on-accent: #ffffff;
+}
+
 /* ---- Solid, softer surfaces (no near-black harshness) ---- */
-html, ytd-app, ytd-watch-flexy, #page-manager, ytd-browse,
-#primary, #columns, #content {
+html[data-ntr-surfaces],
+html[data-ntr-surfaces] ytd-app,
+html[data-ntr-surfaces] ytd-watch-flexy,
+html[data-ntr-surfaces] #page-manager,
+html[data-ntr-surfaces] ytd-browse,
+html[data-ntr-surfaces] #primary,
+html[data-ntr-surfaces] #columns,
+html[data-ntr-surfaces] #content {
   background-color: var(--ntr-bg) !important;
 }
-#masthead-container, ytd-masthead, #masthead {
+html[data-ntr-surfaces] #masthead-container,
+html[data-ntr-surfaces] ytd-masthead,
+html[data-ntr-surfaces] #masthead {
   background: var(--ntr-bg) !important;
   box-shadow: none !important;
 }
 
 /* ---- Calm the reds ---- */
 /* red YouTube logo -> monochrome */
-ytd-logo { filter: var(--ntr-logo-filter) !important; }
+html[data-ntr-recolour] ytd-logo {
+  filter: var(--ntr-logo-filter) !important;
+}
 /* watched-progress + scrubber -> accent instead of red */
-.ytp-play-progress, .ytp-swatch-background-color { background-color: var(--ntr-accent) !important; }
-.ytp-scrubber-button { background-color: var(--ntr-accent) !important; }
+html[data-ntr-recolour] .ytp-play-progress,
+html[data-ntr-recolour] .ytp-swatch-background-color,
+html[data-ntr-recolour] .ytp-scrubber-button {
+  background-color: var(--ntr-accent) !important;
+}
 /* notification / unread count badge -> accent */
-.ytSpecIconBadgeShapeBadge { background-color: var(--ntr-accent) !important; color: var(--ntr-on-accent) !important; }
+html[data-ntr-recolour] .ytSpecIconBadgeShapeBadge {
+  background-color: var(--ntr-accent) !important;
+  color: var(--ntr-on-accent) !important;
+}
 
 /* ---- Fewer / quieter buttons ---- */
-/* filter chips: flat surface, selected uses the accent (not bright white) */
-yt-chip-cloud-chip-renderer {
+/* filter chips: flat surface rather than a bright fill */
+html[data-ntr-quiet] yt-chip-cloud-chip-renderer {
   background: var(--ntr-surface) !important;
   border: 1px solid var(--ntr-border) !important;
   color: var(--ntr-text) !important;
 }
-yt-chip-cloud-chip-renderer.iron-selected,
-yt-chip-cloud-chip-renderer[aria-selected="true"] {
-  background: var(--ntr-accent) !important;
-  color: var(--ntr-on-accent) !important;
+html[data-ntr-quiet] yt-chip-cloud-chip-renderer.iron-selected,
+html[data-ntr-quiet] yt-chip-cloud-chip-renderer[aria-selected="true"] {
+  background: var(--ntr-surface-2) !important;
+  color: var(--ntr-text) !important;
   border-color: transparent !important;
 }
+/* With recolouring on as well, the selected chip is the one place a filter
+   chip is allowed to carry the accent. Without it, quietening the buttons
+   must not smuggle a new colour onto the page. */
+html[data-ntr-quiet][data-ntr-recolour] yt-chip-cloud-chip-renderer.iron-selected,
+html[data-ntr-quiet][data-ntr-recolour] yt-chip-cloud-chip-renderer[aria-selected="true"] {
+  background: var(--ntr-accent) !important;
+  color: var(--ntr-on-accent) !important;
+}
 /* secondary pill actions recede to outlines */
-.yt-spec-button-shape-next--tonal {
+html[data-ntr-quiet] .yt-spec-button-shape-next--tonal {
   background: transparent !important;
   border: 1px solid var(--ntr-border) !important;
 }
 /* flat search box */
-#center #search-form, ytd-searchbox #container {
+html[data-ntr-quiet] #center #search-form,
+html[data-ntr-quiet] ytd-searchbox #container {
   background: var(--ntr-surface) !important;
   border: 1px solid var(--ntr-border) !important;
 }
 
 /* ---- Trim the left sidebar ---- */
 /* Keep Home, Subscriptions (+ channels) and "You"; drop the rest.
-   Matched on stable endpoint hrefs so it survives UI-language changes. */
-ytd-guide-section-renderer:has(a[href="/premium"]),          /* More from YouTube */
-ytd-guide-section-renderer:has(a[href="/gaming"]),           /* Explore */
-ytd-guide-section-renderer:has(a[href*="/feed/storefront"]), /* Explore: Films */
-ytd-guide-entry-renderer:has(a[href="/reporthistory"]),      /* Report history */
-ytd-guide-renderer #footer,
-tp-yt-app-drawer #footer {
+   Matched on stable endpoint hrefs so it survives UI-language changes.
+   Note: the "You" section contains a studio.youtube.com link (Your videos),
+   so sections are never matched on that host — it would hide "You" too. */
+html[data-ntr-trim] ytd-guide-section-renderer:has(a[href="/premium"]),          /* More from YouTube */
+html[data-ntr-trim] ytd-guide-section-renderer:has(a[href="/gaming"]),           /* Explore */
+html[data-ntr-trim] ytd-guide-section-renderer:has(a[href*="/feed/storefront"]), /* Explore: Films */
+html[data-ntr-trim] ytd-guide-entry-renderer:has(a[href="/reporthistory"]),      /* Report history */
+html[data-ntr-trim] ytd-guide-renderer #footer,
+html[data-ntr-trim] tp-yt-app-drawer #footer {
   display: none !important;
 }
-/* Note: the "You" section contains a studio.youtube.com link (Your videos),
-   so sections are never matched on that host — it would hide "You" too. */
 
 /* ---- Watch page: drop the recommended / up-next column ---- */
 /* Removes the whole right column (which also carries live chat and the
    playlist panel) and lets the video widen to fill the reclaimed space. */
-#secondary.ytd-watch-flexy { display: none !important; }
-ytd-watch-flexy[flexy]:not([fullscreen]) #primary.ytd-watch-flexy,
-ytd-watch-flexy[flexy]:not([fullscreen]) #columns.ytd-watch-flexy {
+html[data-ntr-no-upnext] #secondary.ytd-watch-flexy {
+  display: none !important;
+}
+html[data-ntr-no-upnext] ytd-watch-flexy[flexy]:not([fullscreen]) #primary.ytd-watch-flexy,
+html[data-ntr-no-upnext] ytd-watch-flexy[flexy]:not([fullscreen]) #columns.ytd-watch-flexy {
   max-width: none !important;
 }

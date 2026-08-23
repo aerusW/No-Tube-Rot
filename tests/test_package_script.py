@@ -56,13 +56,35 @@ class PackageCase(unittest.TestCase):
 
 
 class WhatShips(PackageCase):
-    EXPECTED = {"manifest.json", "LICENSE", "rules.json", "content.js",
-                "calm.css", "icons/icon-16.png"}
+    EXPECTED = {"manifest.json", "LICENSE", "rules/redirect-home.json",
+                "settings.js", "content.js", "calm.css", "icons/icon-16.png",
+                "options.html", "options.css", "options.js"}
 
     def test_it_packages_exactly_the_manifest_plus_the_always_list(self):
         code, _ = self.build()
         self.assertEqual(code, 0)
         self.assertEqual(self.archived(), self.EXPECTED)
+
+    def test_the_menu_ships_with_the_files_it_loads(self):
+        # The manifest names options.html and nothing else about the menu;
+        # options.css and options.js reach the archive only because the
+        # allowlist follows the page into them.
+        self.build()
+        for rel in ("options.html", "options.css", "options.js"):
+            with self.subTest(rel=rel):
+                self.assertIn(rel, self.archived())
+
+    def test_a_missing_menu_asset_stops_the_build(self):
+        # The failure this guards against ships an extension whose menu opens
+        # blank — and with everything off by default, that is an extension
+        # that cannot be turned on at all.
+        code, out = self.build(drop=("options.js",))
+        self.assertEqual(code, 1)
+        self.assertIn("options.js", out)
+
+    def test_nested_paths_survive_the_archive(self):
+        self.build()
+        self.assertIn("rules/redirect-home.json", self.archived())
 
     def test_the_staging_tree_and_the_archive_agree(self):
         # The release workflow signs the staging directory and ships the zip;

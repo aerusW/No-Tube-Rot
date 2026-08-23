@@ -30,6 +30,14 @@ def notes_for(version: str) -> str | None:
 
 
 def main() -> int:
+    # CHANGELOG.md is UTF-8, and a Windows console defaults to a legacy code
+    # page that cannot encode much of it — a warning callout in a release note
+    # would otherwise crash this script with a UnicodeEncodeError, on the one
+    # machine a contributor is told to rehearse a release from. CI already runs
+    # UTF-8, so this is for everybody else.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     if len(sys.argv) != 2:
         print(__doc__.strip(), file=sys.stderr)
         return 2

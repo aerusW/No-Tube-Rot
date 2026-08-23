@@ -24,19 +24,44 @@ current markup copied out of DevTools.
 
 ## What this project is (and isn't)
 
-No-Tube-Rot is deliberately small and opinionated:
+No-Tube-Rot is deliberately small, and since 2.0 it is deliberately *unopinionated
+by default*:
 
-- **No settings, no options page, no popup.** Installing it *is* the
-  configuration. Anything that would need a toggle is usually the wrong shape
-  for this project.
-- **No network requests, no storage, no analytics.** The extension must keep
-  asking for nothing beyond `declarativeNetRequest` and host access to
-  `www.youtube.com`.
-- **No background service worker.** Static rules plus content scripts cover
-  everything so far; adding one needs a strong reason.
+- **Nothing applies until someone switches it on.** This is the rule everything
+  else follows from. A new behaviour ships off, behind its own switch, and a
+  pull request that turns something on for existing users needs a much better
+  argument than "most people want this". Before 2.0 the project shipped its
+  opinions and the README called that a feature; the reason it changed is in
+  [the README](README.md#why-nothing-is-on-by-default) and worth reading before
+  proposing anything that widens the defaults.
+- **One switch, one behaviour.** If two things can reasonably be wanted apart,
+  they are two switches. "Hide Shorts" is five, because wanting them out of
+  search results is not the same as wanting the sidebar entry gone.
+- **No network requests, no analytics, no remote configuration.** The extension
+  asks for nothing beyond `declarativeNetRequest`, `storage` and host access to
+  `www.youtube.com`, and `storage` holds settings and nothing else — local
+  only, never `storage.sync`.
+- **No background service worker.** Still true after 2.0: the menu switches the
+  rulesets itself. Adding one needs a strong reason.
 
 Changes that widen the permission set will be scrutinised heavily — the
-zero-data promise in the README is the point of the project.
+zero-data promise in the README is the point of the project. `storage` arrived
+in 2.0 and cost a MAJOR version; the next one should cost the same.
+
+### Adding a setting
+
+Four places have to know about it, and the test suite fails if they disagree:
+
+1. **`settings.js`** — add it to `DEFAULTS` (off), and to `RULESETS` if it
+   drives a redirect or `ATTRIBUTES` if it gates CSS. Never both.
+2. **`options.html`** — add a control whose `id` is the settings key. The menu
+   binds by id; don't name the key in `options.js`.
+3. **The thing it switches** — a new file under `rules/`, registered disabled in
+   the manifest, or a gated rule group in one of the stylesheets.
+4. **`README.md`** — a row in the relevant table under *What it can do*.
+
+Nothing else is needed: `content.js` and `options.js` both read the schema, so
+neither has to be edited to add a switch.
 
 ---
 
@@ -67,7 +92,7 @@ Permanent installs come from the signed `.xpi` a release produces.
 **After each edit:** press the ↻ reload button on the extension card (Firefox:
 **Reload** on the add-on in `about:debugging`), then hard-reload the YouTube tab
 (`Ctrl`/`Cmd` + `Shift` + `R`). CSS changes usually show up on a plain reload;
-`manifest.json` and `rules.json` changes always need the extension reloaded
+`manifest.json` and the files under `rules/` always need the extension reloaded
 first.
 
 > ### ⚠️ Don't load the same folder in both browsers
@@ -111,15 +136,22 @@ JavaScript half is skipped with a note rather than failing.
 tests/run.py              the entry point above
 tests/support.py          fixtures and helpers; no tests live here
 tests/test_rules.py       what each declarativeNetRequest rule does to a URL
-tests/test_stylesheets.py stylesheet structure, palette parity, WCAG contrast
-tests/test_manifest.py    the permission surface and the packaging details
+tests/test_stylesheets.py gating, palette parity, WCAG contrast, swatch accuracy
+tests/test_manifest.py    the permission surface, the menu, the disabled rulesets
 tests/test_checks_script.py    checks.py, fed deliberately broken repositories
 tests/test_package_script.py   what ends up in a release archive, and what can't
 tests/test_release_notes.py    the changelog section a release publishes
+tests/js/settings.test.js the schema, and the menu/CSS/ruleset agreeing with it
 tests/js/content.test.js  content.js, in a fake DOM under node:vm
 ```
 
-The two redirect suites are worth knowing about together. `rules.json` and
+The two that carry 2.0 are worth knowing by name. `settings.test.js` asserts
+every switch defaults to off and that no setting exists without a control, a
+gate and something to drive — the wiring nothing checks at runtime.
+`test_stylesheets.py` walks both stylesheets and fails on any rule that isn't
+behind a gate.
+
+The two redirect suites are worth knowing about together. The rulesets and
 `content.js` do the same job on different paths — one on hard loads, one on
 YouTube's in-app router — so they are tested against the same URLs, and they
 must agree about where each one ends up.
@@ -136,11 +168,15 @@ Walk the surfaces your change touches:
 
 | Area | Check |
 |---|---|
-| Redirects | `youtube.com` typed fresh (hard load) **and** clicking the YouTube logo in-app (SPA). Also `/shorts` and a specific `/shorts/<id>`. |
-| Shorts hiding | Home, Subscriptions, search results, a channel page's tabs, the left sidebar and the collapsed mini sidebar. |
-| Calm restyle | Both YouTube themes — avatar → **Appearance** → Dark and Light. Check text contrast, not just background colour. |
+| **A fresh profile** | Install with nothing switched on and confirm YouTube is untouched — no redirect, no hidden shelf, no repaint. This is the one that matters most, and it is the one nobody thinks to do. |
+| The menu | Opens from both the toolbar icon and the browser's options screen. Switches persist across a reload; fine-tunes grey out when their parent is off. |
+| Redirects | With each switch on: `youtube.com` typed fresh (hard load) **and** clicking the YouTube logo in-app (SPA). Also `/shorts` and a specific `/shorts/<id>`. Then switch it off and confirm the redirect stops. |
+| Shorts hiding | Home, Subscriptions, search results, a channel page's tabs, the left sidebar and the collapsed mini sidebar — one switch at a time. |
+| Calm restyle | Both YouTube themes — avatar → **Appearance** → Dark and Light — and all four accents. Check text contrast, not just background colour. |
 | Watch page | The recommended column is gone and the player widens; fullscreen and theatre mode still behave. |
-| Both engines | Chromium **and** Firefox. They diverge on extension packaging and on `declarativeNetRequest` support, so a change that works in one is not evidence about the other. |
+| Picture-in-picture | Switch tabs, and minimise the window, with a video playing. Then the two fine-tunes. Chromium only — confirm the menu says so on Firefox. |
+| Applying live | Toggle a switch with a YouTube tab already open: CSS switches apply immediately, redirects only on the next navigation. |
+| Both engines | Chromium **and** Firefox. They diverge on extension packaging, on `declarativeNetRequest` support and on picture-in-picture, so a change that works in one is not evidence about the other. |
 
 Please say in the PR which browser and which pages you actually checked.
 
@@ -153,11 +189,12 @@ python .github/scripts/checks.py            # everything except the bump rules
 python .github/scripts/checks.py --base main   # also check the version bump
 ```
 
-It verifies that `manifest.json` and `rules.json` parse, that every file the
-manifest references exists, that the issue forms are valid YAML, that the
+It verifies that `manifest.json` and every ruleset it registers parse, that
+every file the manifest references exists — following `options.html` into the
+assets it loads — that no ruleset is registered enabled, that the issue forms are valid YAML, that the
 version is three-component and matches the newest `CHANGELOG.md` entry, that a
 bump never reuses an already-tagged version, and that no `console.log` or
-`debugger` made it into `content.js`.
+`debugger` made it into any shipped script.
 
 It also looks for underscore-prefixed names anywhere in the tree, because one
 `_metadata/` is enough to stop the whole folder loading in Firefox. An ignored
@@ -208,11 +245,15 @@ repairable later.
 ## Project layout
 
 ```
-manifest.json      # MV3 manifest — permissions, content scripts, ruleset registration
-rules.json         # declarativeNetRequest rules: redirect on hard loads, before the page paints
-content.js         # SPA-navigation redirects, for the in-app router the network rules can't see
+manifest.json      # MV3 manifest — permissions, content scripts, ruleset registration, the menu
+settings.js        # the schema: every setting, its default, and what it drives
+content.js         # CSS gates, SPA-navigation redirects, picture-in-picture
+rules/*.json       # one declarativeNetRequest ruleset per redirect, all registered disabled
 hide-shorts.css    # every Shorts surface: shelves, sidebar entries, channel tabs, grid items
-calm.css           # the calm restyle: one accent, flat surfaces, trimmed sidebar, no up-next column
+calm.css           # palettes, accents, flat surfaces, quiet buttons, sidebar trim, up-next removal
+options.html       # the menu — used as both the toolbar popup and the options page
+options.css        # the menu's styling
+options.js         # the menu's behaviour; also the only place rulesets are switched
 icons/             # 16 / 48 / 128 px extension icons
 docs/              # before/after screenshots used by the README
 
@@ -223,9 +264,19 @@ tests/             # the automated suite — nothing here ships
   release_notes.py # pulls one version's section out of CHANGELOG.md
 ```
 
-`rules.json` and `content.js` are intentionally redundant: the first covers URLs
-you type or open cold, the second covers navigations YouTube handles internally.
+`rules/` and `content.js` are intentionally redundant: the first covers URLs you
+type or open cold, the second covers navigations YouTube handles internally.
 Changing a redirect usually means changing both.
+
+**How "off" stays off**, in two mechanisms:
+
+- **CSS** — both stylesheets load in every YouTube tab, so every rule in them is
+  written behind an `html[data-ntr-…]` attribute selector that `content.js` only
+  sets for a switch that is on. An ungated rule applies to someone who turned
+  nothing on, and `test_stylesheets.py` fails on one.
+- **Redirects** — each ruleset is registered `"enabled": false` in the manifest
+  and switched on by `options.js`. `checks.py` fails any tree that commits one
+  enabled.
 
 ---
 
@@ -243,7 +294,7 @@ and reads as an accident.
 
 | Bump | When | Example |
 |---|---|---|
-| **MAJOR** | A core behaviour is removed or reversed, or the extension asks for a **new permission**. Anything that would make an existing user re-evaluate whether they still want it installed. | Adding a `storage` permission |
+| **MAJOR** | A core behaviour is removed or reversed, or the extension asks for a **new permission**. Anything that would make an existing user re-evaluate whether they still want it installed. | 2.0.0: adding `storage`, and making every behaviour opt-in |
 | **MINOR** | New user-visible behaviour — another surface hidden, another URL redirected, a new part of the restyle. | Removing the watch-page up-next column |
 | **PATCH** | Repairing behaviour that was supposed to work already, with nothing new added. Also used for repository/documentation-only releases, which must say "no functional changes" in the changelog. | A selector YouTube broke |
 
@@ -261,8 +312,8 @@ right matters more than any other rule here.
    `1.2.0` is tagged, the next behaviour change is `1.2.1` or `1.3.0` — not more
    commits wearing `1.2.0`.
 3. **Docs-only commits don't bump.** README, CONTRIBUTING and screenshot changes
-   that leave `manifest.json`, `rules.json`, `content.js` and the stylesheets
-   untouched ride along at the current version. A deliberate documentation
+   that leave `manifest.json`, `settings.js`, `rules/`, `content.js`, the
+   stylesheets and the menu untouched ride along at the current version. A deliberate documentation
    *release* is the exception — that takes a PATCH bump and a changelog entry
    saying so.
 
@@ -360,6 +411,9 @@ not selectors.
   note explaining what forced it.
 - Group CSS by intent under a `/* ---- Section ---- */` heading, as the existing
   files do.
+- **Every CSS rule that paints starts with `html[data-ntr-…]`.** The only
+  exemption is a block that defines custom properties and nothing else, because
+  defining one paints nothing. The tests enforce both halves of that.
 - Keep `!important` scoped to what actually needs to beat YouTube's own styles.
 - Prefer hiding a container over hiding its children — leftover headers and
   "Show more" buttons stranded in a gap are a bug in their own right.

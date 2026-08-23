@@ -1,21 +1,44 @@
 {
   "manifest_version": 3,
   "name": "No-Tube-Rot",
-  "version": "1.3.6",
-  "description": "Redirects the YouTube homepage to your subscriptions feed, hides all Shorts, and gives YouTube a calmer, trimmed-down look.",
+  "version": "2.0.0",
+  "description": "Opt-in switches for YouTube: homepage redirect, Shorts removal, a calmer look, and automatic picture-in-picture.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["declarativeNetRequest"],
+  "permissions": ["declarativeNetRequest", "storage"],
   "host_permissions": ["*://www.youtube.com/*"],
+  "action": {
+    "default_title": "No-Tube-Rot",
+    "default_popup": "options.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
   "declarative_net_request": {
     "rule_resources": [
       {
-        "id": "ruleset_1",
-        "enabled": true,
-        "path": "rules.json"
+        "id": "redirect-home",
+        "enabled": false,
+        "path": "rules/redirect-home.json"
+      },
+      {
+        "id": "redirect-shorts-feed",
+        "enabled": false,
+        "path": "rules/redirect-shorts-feed.json"
+      },
+      {
+        "id": "shorts-as-video",
+        "enabled": false,
+        "path": "rules/shorts-as-video.json"
       }
     ]
   },
@@ -29,7 +52,7 @@
     {
       "matches": ["*://www.youtube.com/*"],
       "css": ["hide-shorts.css", "calm.css"],
-      "js": ["content.js"],
+      "js": ["settings.js", "content.js"],
       "run_at": "document_start"
     }
   ]

@@ -48,7 +48,10 @@ ALWAYS = ["manifest.json", "LICENSE"]
 def main() -> int:
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     version = manifest["version"]
-    files = ALWAYS + referenced_files(manifest)
+    # ROOT is passed explicitly: referenced_files follows options.html into the
+    # assets it loads, so it has to read from the tree being packaged rather
+    # than from wherever checks.py happens to live.
+    files = ALWAYS + referenced_files(manifest, ROOT)
 
     missing = [rel for rel in files if not (ROOT / rel).exists()]
     if missing:

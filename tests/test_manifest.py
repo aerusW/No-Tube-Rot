@@ -25,15 +25,18 @@ def png_size(rel: str) -> tuple[int, int]:
 
 
 class Permissions(unittest.TestCase):
-    """README: no network requests of its own, no storage, no analytics.
+    """README: no network requests of its own, nothing leaves the machine.
 
     Every one of those promises is really a promise about this file. A new
     permission is also the one change CONTRIBUTING calls a MAJOR bump, so it
-    should never arrive quietly.
+    should never arrive quietly — `storage` arrived in 2.0 and cost one.
     """
 
-    def test_permissions_are_exactly_declarative_net_request(self):
-        self.assertEqual(MANIFEST["permissions"], ["declarativeNetRequest"])
+    def test_permissions_are_exactly_these_two(self):
+        # storage holds the settings, and nothing else. Adding a third entry
+        # is a MAJOR bump and a conversation, not a quiet edit.
+        self.assertEqual(MANIFEST["permissions"],
+                         ["declarativeNetRequest", "storage"])
 
     def test_no_optional_permissions(self):
         self.assertNotIn("optional_permissions", MANIFEST)
@@ -43,16 +46,28 @@ class Permissions(unittest.TestCase):
         self.assertEqual(MANIFEST["host_permissions"], [HOST])
 
     def test_no_background_worker(self):
+        # Still true after 2.0, and worth keeping true: the menu switches the
+        # rulesets itself, so nothing needs to run when no YouTube tab is open.
         self.assertNotIn("background", MANIFEST)
 
     def test_no_remote_code_or_web_accessible_resources(self):
         self.assertNotIn("web_accessible_resources", MANIFEST)
         self.assertNotIn("content_security_policy", MANIFEST)
 
-    def test_no_ui_surfaces(self):
-        # "Installing it is the configuration" — no popup, no options page.
-        for key in ("action", "browser_action", "page_action", "options_page",
-                    "options_ui", "commands", "omnibox"):
+    def test_the_menu_is_reachable_both_ways(self):
+        # 2.0 reversed "installing it is the configuration". With every switch
+        # off by default, an unreachable menu is an extension that does nothing
+        # at all — so both entry points are load-bearing.
+        self.assertEqual(MANIFEST["action"]["default_popup"], "options.html")
+        self.assertEqual(MANIFEST["options_ui"]["page"], "options.html")
+
+    def test_both_entry_points_open_the_same_page(self):
+        self.assertEqual(MANIFEST["action"]["default_popup"],
+                         MANIFEST["options_ui"]["page"])
+
+    def test_no_other_ui_surfaces(self):
+        for key in ("browser_action", "page_action", "options_page",
+                    "commands", "omnibox"):
             with self.subTest(key=key):
                 self.assertNotIn(key, MANIFEST)
 
@@ -70,21 +85,38 @@ class ContentScripts(unittest.TestCase):
         # Shorts shelves flash up and then vanish.
         self.assertEqual(MANIFEST["content_scripts"][0]["run_at"], "document_start")
 
-    def test_it_loads_both_stylesheets_and_the_script(self):
+    def test_it_loads_both_stylesheets_and_both_scripts(self):
         entry = MANIFEST["content_scripts"][0]
         self.assertEqual(entry["css"], ["hide-shorts.css", "calm.css"])
-        self.assertEqual(entry["js"], ["content.js"])
+        # settings.js first: content.js reads the schema off it at load time,
+        # and a content script list is applied in order.
+        self.assertEqual(entry["js"], ["settings.js", "content.js"])
 
 
 class Packaging(unittest.TestCase):
     def test_manifest_v3(self):
         self.assertEqual(MANIFEST["manifest_version"], 3)
 
-    def test_the_ruleset_is_registered_and_enabled(self):
+    def test_one_ruleset_per_redirect(self):
+        # Splitting them is what lets the menu switch a redirect on without
+        # switching on the other two.
         resources = MANIFEST["declarative_net_request"]["rule_resources"]
-        self.assertEqual(len(resources), 1)
-        self.assertTrue(resources[0]["enabled"])
-        self.assertEqual(resources[0]["path"], "rules.json")
+        self.assertEqual([res["id"] for res in resources],
+                         ["redirect-home", "redirect-shorts-feed", "shorts-as-video"])
+
+    def test_every_ruleset_ships_disabled(self):
+        # The headline promise of 2.0: a fresh install redirects nothing. This
+        # is the assertion that makes "minimal by default" a fact rather than
+        # an intention.
+        for res in MANIFEST["declarative_net_request"]["rule_resources"]:
+            with self.subTest(ruleset=res["id"]):
+                self.assertFalse(res["enabled"])
+
+    def test_ruleset_files_live_together_and_exist(self):
+        for res in MANIFEST["declarative_net_request"]["rule_resources"]:
+            with self.subTest(ruleset=res["id"]):
+                self.assertEqual(res["path"], f"rules/{res['id']}.json")
+                self.assertTrue((support.ROOT / res["path"]).exists())
 
     def test_firefox_can_be_signed(self):
         # No gecko id means web-ext sign has nothing to sign against, and the

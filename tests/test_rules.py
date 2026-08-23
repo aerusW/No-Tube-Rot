@@ -1,4 +1,4 @@
-"""The declarativeNetRequest rules in rules.json.
+"""The declarativeNetRequest rules under rules/.
 
 These rules run before the page paints, on every hard load of a YouTube URL,
 and there is no way to see what they did other than the address bar changing.
@@ -190,17 +190,26 @@ class NoLoops(unittest.TestCase):
 
 
 class MatchesTheContentScript(unittest.TestCase):
-    """rules.json and content.js are deliberately redundant, so they have to
+    """The rulesets and content.js are deliberately redundant, so they have to
     agree: the same URL must end up in the same place whether it was typed
     (network rules) or clicked inside the app (content script)."""
 
     def test_the_content_script_covers_every_redirect_the_rules_make(self):
-        script = support.read("content.js")
+        # The destination lives in settings.js now, shared by both halves, so
+        # the pair is read together.
+        script = support.read("content.js") + support.read("settings.js")
         self.assertIn("/feed/subscriptions", script)
         self.assertIn("/watch?v=", script)
         for path in ("'/'", "'/shorts'", "'/shorts/'"):
             with self.subTest(path=path):
                 self.assertIn(path, script)
+
+    def test_each_ruleset_is_named_for_the_one_thing_it_does(self):
+        # A ruleset is the unit the menu switches on and off, so two rules in
+        # one file would mean two behaviours behind a single switch.
+        for name, group in support.rulesets().items():
+            with self.subTest(ruleset=name):
+                self.assertEqual(len(group), 1)
 
 
 if __name__ == "__main__":
