@@ -10,6 +10,23 @@ dist/
 *.pem
 *.xpi
 
+# web-ext's default output directory, for anyone who runs `web-ext sign`
+# without --artifacts-dir. package.py and the workflows both write to dist/,
+# but the tool falls back to this on its own.
+web-ext-artifacts/
+
+# AMO signing credentials. web-ext reads WEB_EXT_API_KEY / WEB_EXT_API_SECRET
+# from the environment, and the obvious place to keep them is a dotenv file
+# next to the repo. Signing keys must never be committable: a leaked pair lets
+# anyone publish a signed add-on under this ID.
+.env
+.env.*
+!.env.example
+
+# Only web-ext itself needs installing, and the workflows do it globally —
+# but nothing should break if someone installs it here instead.
+node_modules/
+
 # Python bytecode from the .github/scripts helpers and the test suite. Both
 # set sys.dont_write_bytecode, so this should never match anything — it's a
 # backstop, because __pycache__/ is another reserved underscore name in a

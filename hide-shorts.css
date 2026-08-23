@@ -1,9 +1,15 @@
 /*
  * Shorts hiding rules — one switch per surface.
  *
- * Every rule here is gated behind an attribute that content.js puts on <html>
- * once it has read the settings, so this stylesheet is inert until something
- * is switched on. Nothing in it applies on a fresh install.
+ * Every rule here applies by default and stops applying when content.js puts
+ * the matching `data-ntr-off-…` attribute on <html>, which it does only for a
+ * surface someone has switched off in the menu.
+ *
+ * The `:not()` is what makes that free of flicker. Settings are read
+ * asynchronously while this stylesheet is already live, so for a few
+ * milliseconds no attribute is set at all — and with the test this way round,
+ * that window hides Shorts, which is what the defaults ask for. Written the
+ * other way, every page load would show the shelves and then snatch them away.
  *
  * Note on matching: YouTube keeps "Shorts" as an untranslated brand name in
  * every locale (verified on an Italian UI, where "Subscriptions" shows as
@@ -13,9 +19,9 @@
  */
 
 /* ---- Shorts shelves on home/feed pages ---- */
-html[data-ntr-shorts-shelves] ytd-rich-shelf-renderer[is-shorts],
-html[data-ntr-shorts-shelves] ytd-reel-shelf-renderer,
-html[data-ntr-shorts-shelves] ytd-shorts {
+html:not([data-ntr-off-shorts-shelves]) ytd-rich-shelf-renderer[is-shorts],
+html:not([data-ntr-off-shorts-shelves]) ytd-reel-shelf-renderer,
+html:not([data-ntr-off-shorts-shelves]) ytd-shorts {
   display: none !important;
 }
 
@@ -24,33 +30,33 @@ html[data-ntr-shorts-shelves] ytd-shorts {
    grid-shelf-view-model, so it has to be matched by what it holds. Hiding
    only the items inside left the "Shorts" header and its "Show more" button
    stranded between results, with gaps where the items had been. */
-html[data-ntr-shorts-search] grid-shelf-view-model:has(a[href*="/shorts/"]) {
+html:not([data-ntr-off-shorts-search]) grid-shelf-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }
 
 /* ---- Shorts entry in the left sidebar and mini sidebar ----
    The link no longer carries href="/shorts"; its title attribute does. */
-html[data-ntr-shorts-sidebar] ytd-guide-entry-renderer:has(a[title="Shorts" i]),
-html[data-ntr-shorts-sidebar] ytd-guide-entry-renderer:has(a[aria-label="Shorts" i]),
-html[data-ntr-shorts-sidebar] ytd-mini-guide-entry-renderer:has(a[title="Shorts" i]),
-html[data-ntr-shorts-sidebar] ytd-mini-guide-entry-renderer:has(a[aria-label="Shorts" i]) {
+html:not([data-ntr-off-shorts-sidebar]) ytd-guide-entry-renderer:has(a[title="Shorts" i]),
+html:not([data-ntr-off-shorts-sidebar]) ytd-guide-entry-renderer:has(a[aria-label="Shorts" i]),
+html:not([data-ntr-off-shorts-sidebar]) ytd-mini-guide-entry-renderer:has(a[title="Shorts" i]),
+html:not([data-ntr-off-shorts-sidebar]) ytd-mini-guide-entry-renderer:has(a[aria-label="Shorts" i]) {
   display: none !important;
 }
 
 /* ---- Shorts tab on channel pages ----
    The tab exposes no href/data hook, only localized (now singular) text, so
    a case-insensitive prefix on the English brand name is the stable option. */
-html[data-ntr-shorts-tab] yt-tab-shape[tab-title^="Short" i] {
+html:not([data-ntr-off-shorts-tab]) yt-tab-shape[tab-title^="Short" i] {
   display: none !important;
 }
 
 /* ---- Individual Short items in video grids, lists and search results ---- */
-html[data-ntr-shorts-items] ytd-video-renderer:has(a[href*="/shorts/"]),
-html[data-ntr-shorts-items] ytd-grid-video-renderer:has(a[href*="/shorts/"]),
-html[data-ntr-shorts-items] ytd-rich-item-renderer:has(a[href*="/shorts/"]),
-html[data-ntr-shorts-items] ytd-reel-item-renderer,
-html[data-ntr-shorts-items] ytm-shorts-lockup-view-model,
-html[data-ntr-shorts-items] ytm-shorts-lockup-view-model-v2,
-html[data-ntr-shorts-items] yt-lockup-view-model:has(a[href*="/shorts/"]) {
+html:not([data-ntr-off-shorts-items]) ytd-video-renderer:has(a[href*="/shorts/"]),
+html:not([data-ntr-off-shorts-items]) ytd-grid-video-renderer:has(a[href*="/shorts/"]),
+html:not([data-ntr-off-shorts-items]) ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+html:not([data-ntr-off-shorts-items]) ytd-reel-item-renderer,
+html:not([data-ntr-off-shorts-items]) ytm-shorts-lockup-view-model,
+html:not([data-ntr-off-shorts-items]) ytm-shorts-lockup-view-model-v2,
+html:not([data-ntr-off-shorts-items]) yt-lockup-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }

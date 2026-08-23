@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "No-Tube-Rot",
   "version": "2.0.0",
-  "description": "Opt-in switches for YouTube: homepage redirect, Shorts removal, a calmer look, and automatic picture-in-picture.",
+  "description": "No algorithmic homepage, no Shorts, a calmer look and automatic picture-in-picture, with a menu to hand any of it back.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -27,17 +27,17 @@
     "rule_resources": [
       {
         "id": "redirect-home",
-        "enabled": false,
+        "enabled": true,
         "path": "rules/redirect-home.json"
       },
       {
         "id": "redirect-shorts-feed",
-        "enabled": false,
+        "enabled": true,
         "path": "rules/redirect-shorts-feed.json"
       },
       {
         "id": "shorts-as-video",
-        "enabled": false,
+        "enabled": true,
         "path": "rules/shorts-as-video.json"
       }
     ]

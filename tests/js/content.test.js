@@ -198,9 +198,47 @@ const ALL_REDIRECTS = {
   redirectHome: true, redirectShortsFeed: true, shortsAsVideo: true,
 };
 
+/** Every switch turned off, derived from the schema so it cannot drift. */
+const EVERYTHING_OFF = (() => {
+  const sandbox = { chrome: { storage: { local: {} } } };
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(SETTINGS_SOURCE, sandbox);
+  return Object.fromEntries(Object.entries(sandbox.NTR.DEFAULTS)
+    .filter(([, value]) => typeof value === 'boolean')
+    .map(([key]) => [key, false]));
+})();
+
 /* ---- The default position ---------------------------------------------- */
 
-test('a fresh install redirects nothing at all', async () => {
+test('a fresh install redirects without being asked to', async () => {
+  // Nothing is stored, nothing has been configured, and YouTube is already
+  // being redirected. That is the default position.
+  assert.equal(await landsOn('https://www.youtube.com/'), SUBSCRIPTIONS);
+  assert.equal(await landsOn('https://www.youtube.com/?gl=GB'), SUBSCRIPTIONS);
+  assert.equal(await landsOn('https://www.youtube.com/shorts'), SUBSCRIPTIONS);
+  assert.equal(await landsOn('https://www.youtube.com/shorts/'), SUBSCRIPTIONS);
+  assert.equal(await landsOn('https://www.youtube.com/shorts/dQw4w9WgXcQ'),
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+});
+
+test('a fresh install sets no off-switch attribute', async () => {
+  // The stylesheets read these as `:not(...)`, so an empty set means every
+  // rule in them is in force.
+  const page = await opened('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  const set = [...page.attributes.keys()].filter((name) => name !== 'data-ntr-accent');
+  assert.deepEqual(set, []);
+});
+
+test('a fresh install applies an accent', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=x');
+  assert.equal(page.attributes.get('data-ntr-accent'), 'sage');
+  assert.equal(page.gate('data-ntr-off-recolour'), false,
+    'recolouring is on by default, so its off-attribute must be absent');
+});
+
+/* ---- Handing YouTube back ---------------------------------------------- */
+
+test('switching everything off leaves every URL alone', async () => {
   for (const href of [
     'https://www.youtube.com/',
     'https://www.youtube.com/?gl=GB',
@@ -208,24 +246,17 @@ test('a fresh install redirects nothing at all', async () => {
     'https://www.youtube.com/shorts/',
     'https://www.youtube.com/shorts/dQw4w9WgXcQ',
   ]) {
-    assert.equal(await landsOn(href), null,
-      `${href} was redirected on a fresh install`);
+    assert.equal(await landsOn(href, EVERYTHING_OFF), null,
+      `${href} was still redirected with every switch off`);
   }
 });
 
-test('a fresh install sets no hiding or restyling attribute', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+test('switching everything off marks every gate', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=x', EVERYTHING_OFF);
   const set = [...page.attributes.keys()].filter((name) => name !== 'data-ntr-accent');
-  assert.deepEqual(set, [],
-    'the stylesheets are gated on these, so any of them paints something');
-});
-
-test('a fresh install still picks an accent, without applying one', async () => {
-  // The attribute selects a palette; the rules that read it are gated
-  // separately, so naming a colour here paints nothing.
-  const page = await opened('https://www.youtube.com/');
-  assert.equal(page.attributes.get('data-ntr-accent'), 'sage');
-  assert.equal(page.gate('data-ntr-recolour'), false);
+  // Ten CSS switches; the three redirects and the three PiP ones have no gate.
+  assert.equal(set.length, 10);
+  for (const name of set) assert.match(name, /^data-ntr-off-/);
 });
 
 /* ---- Redirects ---------------------------------------------------------- */
@@ -274,15 +305,23 @@ test('a short with a trailing path segment still resolves to its id', async () =
     'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 });
 
-test('each redirect switch moves only its own URLs', async () => {
-  // The point of three rulesets rather than one: switching on the homepage
-  // redirect must not quietly start rewriting Shorts as well.
-  assert.equal(await landsOn('https://www.youtube.com/shorts/abc',
-    { redirectHome: true }), null);
-  assert.equal(await landsOn('https://www.youtube.com/', { shortsAsVideo: true }),
+test('each redirect switch stops only its own URLs', async () => {
+  // The point of three rulesets rather than one: handing the homepage back
+  // must not also hand back the Shorts player.
+  assert.equal(await landsOn('https://www.youtube.com/', { redirectHome: false }),
     null);
+  assert.equal(await landsOn('https://www.youtube.com/shorts/abc',
+    { redirectHome: false }), 'https://www.youtube.com/watch?v=abc');
+
+  assert.equal(await landsOn('https://www.youtube.com/shorts/abc',
+    { shortsAsVideo: false }), null);
+  assert.equal(await landsOn('https://www.youtube.com/', { shortsAsVideo: false }),
+    SUBSCRIPTIONS);
+
   assert.equal(await landsOn('https://www.youtube.com/shorts',
-    { shortsAsVideo: true }), null);
+    { redirectShortsFeed: false }), null);
+  assert.equal(await landsOn('https://www.youtube.com/', { redirectShortsFeed: false }),
+    SUBSCRIPTIONS);
 });
 
 test('the rest of YouTube is left alone even with everything on', async () => {
@@ -328,8 +367,9 @@ test('clicking the logo in-app redirects the same way a cold load does', async (
   assert.deepEqual(page.replaced, [SUBSCRIPTIONS]);
 });
 
-test('in-app navigation is gated too', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+test('in-app navigation stops too once the redirects are off', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    EVERYTHING_OFF);
   page.navigate('/');
   page.navigate('/shorts/abc');
   assert.deepEqual(page.replaced, []);
@@ -337,10 +377,10 @@ test('in-app navigation is gated too', async () => {
 
 test('an in-app navigation before the settings land does nothing', async () => {
   // The gap between document_start and storage answering. Doing nothing is
-  // the only safe answer: acting on defaults we have not read yet would
-  // redirect someone who switched the redirect off.
-  const page = open('https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    { redirectHome: true });
+  // the only safe answer: redirecting on assumed defaults would move someone
+  // who had switched that redirect off. The CSS covers the same gap the other
+  // way, because a late stylesheet flashes and a late redirect does not.
+  const page = open('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
   page.navigate('/');
   assert.deepEqual(page.replaced, []);
 });
@@ -373,31 +413,33 @@ test('it navigates with replace, not assign', () => {
 
 /* ---- CSS gates ---------------------------------------------------------- */
 
-test('each switch sets exactly its own attribute', async () => {
+test('switching one thing off marks exactly its own gate', async () => {
   const cases = {
-    hideShortsShelves: 'data-ntr-shorts-shelves',
-    hideShortsSearch: 'data-ntr-shorts-search',
-    hideShortsItems: 'data-ntr-shorts-items',
-    hideShortsSidebar: 'data-ntr-shorts-sidebar',
-    hideShortsTab: 'data-ntr-shorts-tab',
-    calmSurfaces: 'data-ntr-surfaces',
-    recolourAccent: 'data-ntr-recolour',
-    quietButtons: 'data-ntr-quiet',
-    trimSidebar: 'data-ntr-trim',
-    hideUpNext: 'data-ntr-no-upnext',
+    hideShortsShelves: 'data-ntr-off-shorts-shelves',
+    hideShortsSearch: 'data-ntr-off-shorts-search',
+    hideShortsItems: 'data-ntr-off-shorts-items',
+    hideShortsSidebar: 'data-ntr-off-shorts-sidebar',
+    hideShortsTab: 'data-ntr-off-shorts-tab',
+    calmSurfaces: 'data-ntr-off-surfaces',
+    recolourAccent: 'data-ntr-off-recolour',
+    quietButtons: 'data-ntr-off-quiet',
+    trimSidebar: 'data-ntr-off-trim',
+    hideUpNext: 'data-ntr-off-upnext',
   };
   for (const [key, attribute] of Object.entries(cases)) {
     const page = await opened('https://www.youtube.com/feed/subscriptions',
-      { [key]: true });
+      { [key]: false });
     const set = [...page.attributes.keys()].filter((n) => n !== 'data-ntr-accent');
     assert.deepEqual(set, [attribute], `${key} set ${set} instead of ${attribute}`);
   }
 });
 
 test('the redirects set no attribute of their own', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', ALL_REDIRECTS);
+  const page = await opened('https://www.youtube.com/watch?v=x', {
+    redirectHome: false, redirectShortsFeed: false, shortsAsVideo: false,
+  });
   const set = [...page.attributes.keys()].filter((n) => n !== 'data-ntr-accent');
-  assert.deepEqual(set, []);
+  assert.deepEqual(set, [], 'redirects are rulesets, not stylesheet gates');
 });
 
 test('a chosen accent reaches the page', async () => {
@@ -415,17 +457,18 @@ test('an accent the extension does not ship falls back to the default', async ()
 
 test('changing a setting repaints an open tab without a reload', async () => {
   const page = await opened('https://www.youtube.com/feed/subscriptions');
-  assert.equal(page.gate('data-ntr-shorts-items'), false);
-  await page.change({ hideShortsItems: true });
-  assert.equal(page.gate('data-ntr-shorts-items'), true);
+  assert.equal(page.gate('data-ntr-off-shorts-items'), false);
   await page.change({ hideShortsItems: false });
-  assert.equal(page.gate('data-ntr-shorts-items'), false);
+  assert.equal(page.gate('data-ntr-off-shorts-items'), true);
+  await page.change({ hideShortsItems: true });
+  assert.equal(page.gate('data-ntr-off-shorts-items'), false);
 });
 
-test('switching a redirect on does not move the page you are already on', async () => {
+test('changing a redirect does not move the page you are already on', async () => {
   // Redirects act on a navigation. Moving the tab out from under someone who
   // just opened the menu would be a surprise, not a feature.
-  const page = await opened('https://www.youtube.com/');
+  const page = await opened('https://www.youtube.com/watch?v=x');
+  await page.change({ redirectHome: false });
   await page.change({ redirectHome: true });
   assert.deepEqual(page.replaced, []);
 });
@@ -433,14 +476,14 @@ test('switching a redirect on does not move the page you are already on', async 
 /* ---- Picture-in-picture ------------------------------------------------- */
 
 test('hiding the page does nothing when picture-in-picture is off', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x');
+  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: false });
   const video = page.addVideo();
   await page.hide();
   assert.equal(video.pipRequests, 0);
 });
 
-test('hiding the page pops the playing video out once switched on', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+test('hiding the page pops the playing video out by default', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo();
   await page.hide();
   assert.equal(video.pipRequests, 1);
@@ -448,7 +491,7 @@ test('hiding the page pops the playing video out once switched on', async () => 
 });
 
 test('a paused or finished video is left where it is', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const paused = page.addVideo({ paused: true });
   const ended = page.addVideo({ ended: true });
   await page.hide();
@@ -457,14 +500,14 @@ test('a paused or finished video is left where it is', async () => {
 });
 
 test('a video that forbids picture-in-picture is respected', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo({ disablePictureInPicture: true });
   await page.hide();
   assert.equal(video.pipRequests, 0);
 });
 
 test('an audio-only element is not popped out', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo({ videoWidth: 0 });
   await page.hide();
   assert.equal(video.pipRequests, 0);
@@ -473,7 +516,7 @@ test('an audio-only element is not popped out', async () => {
 test('a refused request is swallowed rather than thrown', async () => {
   // Without a user gesture the browser says no, and that is the expected
   // path, not a bug to surface.
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo({ refuse: true });
   await page.hide();
   assert.equal(video.pipRequests, 1);
@@ -482,22 +525,21 @@ test('a refused request is swallowed rather than thrown', async () => {
 
 test('a playing video is marked so the browser can hand it off itself', async () => {
   // The attribute is the path that needs no gesture at all.
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo();
   page.play(video);
   assert.equal(video.autoPictureInPicture, true);
 });
 
 test('videos are not marked when the switch is off', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x');
+  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: false });
   const video = page.addVideo();
   page.play(video);
   assert.equal(video.autoPictureInPicture, false);
 });
 
-test('coming back closes a window it opened, when asked to', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x',
-    { autoPip: true, autoPipReturn: true });
+test('coming back closes a window it opened, by default', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=x');
   page.addVideo();
   await page.hide();
   assert.notEqual(page.document.pictureInPictureElement, null);
@@ -505,8 +547,9 @@ test('coming back closes a window it opened, when asked to', async () => {
   assert.equal(page.document.pictureInPictureElement, null);
 });
 
-test('coming back leaves it open when not asked to', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+test('coming back leaves it open when that fine-tune is off', async () => {
+  const page = await opened('https://www.youtube.com/watch?v=x',
+    { autoPipReturn: false });
   page.addVideo();
   await page.hide();
   await page.show();
@@ -514,8 +557,7 @@ test('coming back leaves it open when not asked to', async () => {
 });
 
 test('it never closes a picture-in-picture window it did not open', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x',
-    { autoPip: true, autoPipReturn: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo();
   // The user opened this one with YouTube's own button.
   page.document.pictureInPictureElement = video;
@@ -524,30 +566,31 @@ test('it never closes a picture-in-picture window it did not open', async () => 
 });
 
 test('an already-floating video is not requested again', async () => {
-  const page = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
+  const page = await opened('https://www.youtube.com/watch?v=x');
   const video = page.addVideo();
   page.document.pictureInPictureElement = video;
   await page.hide();
   assert.equal(video.pipRequests, 0);
 });
 
-test('losing focus pops out only when that fine-tune is on', async () => {
-  const off = await opened('https://www.youtube.com/watch?v=x', { autoPip: true });
-  const quiet = off.addVideo();
-  await off.blur();
-  assert.equal(quiet.pipRequests, 0);
-
-  const on = await opened('https://www.youtube.com/watch?v=x',
-    { autoPip: true, autoPipOnBlur: true });
+test('losing focus pops out unless that fine-tune is switched off', async () => {
+  const on = await opened('https://www.youtube.com/watch?v=x');
   const video = on.addVideo();
   await on.blur();
   assert.equal(video.pipRequests, 1);
+
+  const off = await opened('https://www.youtube.com/watch?v=x',
+    { autoPipOnBlur: false });
+  const quiet = off.addVideo();
+  await off.blur();
+  assert.equal(quiet.pipRequests, 0);
 });
 
-test('the fine-tunes do nothing on their own', async () => {
-  // They are drawn under a parent switch; storage can still hold them alone.
+test('the fine-tunes do nothing once the parent switch is off', async () => {
+  // They are drawn under a parent switch, but storage can hold any
+  // combination — including both fine-tunes on with the parent off.
   const page = await opened('https://www.youtube.com/watch?v=x',
-    { autoPipOnBlur: true, autoPipReturn: true });
+    { autoPip: false, autoPipOnBlur: true, autoPipReturn: true });
   const video = page.addVideo();
   await page.blur();
   await page.hide();

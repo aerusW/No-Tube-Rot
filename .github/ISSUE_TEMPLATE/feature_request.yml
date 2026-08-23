@@ -9,10 +9,10 @@ body:
         Thanks for the idea! Please describe the problem before the solution.
 
         Worth knowing up front: since 2.0, everything No-Tube-Rot does is an
-        **individual switch that ships off**. A proposal has a much better
-        chance if it fits that shape — one switch, one behaviour, nothing
-        applied to anyone who didn't ask for it. Proposals to turn something
-        on by default are the hard sell, not proposals to add a switch.
+        **individual switch, and every switch ships on**. A proposal has a much
+        better chance if it fits that shape — one switch, one behaviour, on by
+        default and switchable off on its own. Anything that cannot be turned
+        off individually is the hard sell.
 
   - type: textarea
     id: problem

@@ -49,12 +49,14 @@ function accentValues() {
 
 /* ---- The default position ---------------------------------------------- */
 
-test('every switch is off by default', () => {
-  // The whole of 2.0, in one assertion. A default of true here is an
-  // extension that changes YouTube for someone who never asked it to.
+test('every switch is on by default', () => {
+  // The default position, in one assertion: a fresh install gives the full
+  // effect with nothing to configure. A default of false here is a piece of
+  // the extension that silently does nothing for anyone who never opens the
+  // menu.
   for (const [key, value] of Object.entries(NTR.DEFAULTS)) {
     if (key === 'accent') continue;
-    assert.equal(value, false, `${key} defaults to on`);
+    assert.equal(value, true, `${key} defaults to off`);
   }
 });
 
@@ -69,10 +71,14 @@ test('the default accent is one the extension actually ships', () => {
   assert.ok(NTR.ACCENTS.includes(NTR.DEFAULTS.accent));
 });
 
-test('choosing an accent is not the same as applying one', () => {
+test('the accent is a choice, and recolouring is the switch', () => {
   // `accent` has to hold a real value at all times so the palette resolves,
-  // which means it cannot itself be the switch. recolourAccent is.
-  assert.equal(NTR.DEFAULTS.recolourAccent, false);
+  // which means it cannot itself be the switch. recolourAccent is, and it is
+  // a switch like any other.
+  assert.equal(typeof NTR.DEFAULTS.recolourAccent, 'boolean');
+  assert.equal(typeof NTR.DEFAULTS.accent, 'string');
+  assert.ok(!(NTR.DEFAULTS.accent in NTR.ATTRIBUTES),
+    'the accent names a palette; it does not gate anything');
 });
 
 /* ---- The schema and the menu agree ------------------------------------- */
@@ -156,11 +162,12 @@ test('every accent has a palette in both themes', () => {
 /* ---- The docs describe the schema that exists -------------------------- */
 
 test('the README counts the switches correctly', () => {
-  // "as N independent switches" is the sentence that carries the whole 2.0
-  // argument, and it is exactly the kind of number that rots silently.
+  // "ask you to make N decisions" is the sentence that carries the whole
+  // defaults-on argument, and it is exactly the kind of number that rots
+  // silently as switches are added.
   const switches = Object.values(NTR.DEFAULTS)
     .filter((value) => typeof value === 'boolean').length;
-  const claimed = read('README.md').match(/as (\d+)\s*\n?independent switches/);
+  const claimed = read('README.md').match(/make (\d+)\s*\n?decisions/);
   assert.ok(claimed, 'the README no longer states a switch count');
   assert.equal(Number(claimed[1]), switches);
 });
@@ -179,11 +186,19 @@ test('missing keys fall back to their defaults', () => {
   assert.deepEqual(NTR.normalise(undefined), NTR.DEFAULTS);
 });
 
-test('a value of the wrong type is ignored', () => {
+test('a value of the wrong type falls back to the default', () => {
   // Storage is writable by hand, and by versions that have not shipped yet.
-  assert.equal(NTR.normalise({ redirectHome: 'yes' }).redirectHome, false);
-  assert.equal(NTR.normalise({ redirectHome: 1 }).redirectHome, false);
-  assert.equal(NTR.normalise({ redirectHome: null }).redirectHome, false);
+  for (const junk of ['yes', 1, null, {}]) {
+    assert.equal(NTR.normalise({ redirectHome: junk }).redirectHome,
+      NTR.DEFAULTS.redirectHome);
+  }
+});
+
+test('a stored false is honoured', () => {
+  // The one that matters now the defaults are on: a switch someone turned
+  // off must survive being read back.
+  assert.equal(NTR.normalise({ redirectHome: false }).redirectHome, false);
+  assert.equal(NTR.normalise({ hideUpNext: false }).hideUpNext, false);
 });
 
 test('an unknown accent falls back rather than leaving no palette', () => {

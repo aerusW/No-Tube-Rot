@@ -24,16 +24,18 @@ current markup copied out of DevTools.
 
 ## What this project is (and isn't)
 
-No-Tube-Rot is deliberately small, and since 2.0 it is deliberately *unopinionated
-by default*:
+No-Tube-Rot is deliberately small, and deliberately opinionated about what it
+does before you touch anything:
 
-- **Nothing applies until someone switches it on.** This is the rule everything
-  else follows from. A new behaviour ships off, behind its own switch, and a
-  pull request that turns something on for existing users needs a much better
-  argument than "most people want this". Before 2.0 the project shipped its
-  opinions and the README called that a feature; the reason it changed is in
-  [the README](README.md#why-nothing-is-on-by-default) and worth reading before
-  proposing anything that widens the defaults.
+- **The defaults are the strong ones.** Installing it gives the quietest
+  YouTube the extension knows how to produce, with no setup screen and nothing
+  to switch on. A tool for not being pulled around by an interface should not
+  open by asking you to make sixteen decisions; the reasoning is in
+  [the README](README.md#why-its-all-on-by-default). A new behaviour ships
+  **on**, like everything else.
+- **Every behaviour must be switchable off.** That is the other half of the
+  bargain, and it is what makes a strong default defensible rather than
+  arrogant. Anything that cannot be turned off individually does not go in.
 - **One switch, one behaviour.** If two things can reasonably be wanted apart,
   they are two switches. "Hide Shorts" is five, because wanting them out of
   search results is not the same as wanting the sidebar entry gone.
@@ -52,12 +54,14 @@ in 2.0 and cost a MAJOR version; the next one should cost the same.
 
 Four places have to know about it, and the test suite fails if they disagree:
 
-1. **`settings.js`** — add it to `DEFAULTS` (off), and to `RULESETS` if it
-   drives a redirect or `ATTRIBUTES` if it gates CSS. Never both.
+1. **`settings.js`** — add it to `DEFAULTS` (**on**, like everything else),
+   and to `RULESETS` if it drives a redirect or `ATTRIBUTES` if it gates CSS.
+   Never both.
 2. **`options.html`** — add a control whose `id` is the settings key. The menu
    binds by id; don't name the key in `options.js`.
-3. **The thing it switches** — a new file under `rules/`, registered disabled in
-   the manifest, or a gated rule group in one of the stylesheets.
+3. **The thing it switches** — a new file under `rules/`, registered
+   **enabled** in the manifest, or a rule group in one of the stylesheets
+   gated as `html:not([data-ntr-off-…])`.
 4. **`README.md`** — a row in the relevant table under *What it can do*.
 
 Nothing else is needed: `content.js` and `options.js` both read the schema, so
@@ -137,7 +141,7 @@ tests/run.py              the entry point above
 tests/support.py          fixtures and helpers; no tests live here
 tests/test_rules.py       what each declarativeNetRequest rule does to a URL
 tests/test_stylesheets.py gating, palette parity, WCAG contrast, swatch accuracy
-tests/test_manifest.py    the permission surface, the menu, the disabled rulesets
+tests/test_manifest.py    the permission surface, the menu, the enabled rulesets
 tests/test_checks_script.py    checks.py, fed deliberately broken repositories
 tests/test_package_script.py   what ends up in a release archive, and what can't
 tests/test_release_notes.py    the changelog section a release publishes
@@ -146,10 +150,10 @@ tests/js/content.test.js  content.js, in a fake DOM under node:vm
 ```
 
 The two that carry 2.0 are worth knowing by name. `settings.test.js` asserts
-every switch defaults to off and that no setting exists without a control, a
+every switch defaults to **on** and that no setting exists without a control, a
 gate and something to drive — the wiring nothing checks at runtime.
 `test_stylesheets.py` walks both stylesheets and fails on any rule that isn't
-behind a gate.
+behind a gate, or is behind one the wrong way round.
 
 The two redirect suites are worth knowing about together. The rulesets and
 `content.js` do the same job on different paths — one on hard loads, one on
@@ -168,10 +172,10 @@ Walk the surfaces your change touches:
 
 | Area | Check |
 |---|---|
-| **A fresh profile** | Install with nothing switched on and confirm YouTube is untouched — no redirect, no hidden shelf, no repaint. This is the one that matters most, and it is the one nobody thinks to do. |
+| **A fresh profile** | Install with nothing configured and confirm the full effect is already there — redirect, hidden shelves, repaint — and that nothing flashes on the way in. Watch a cold load of a busy feed specifically: a Shorts shelf appearing and vanishing means the CSS gate polarity is wrong. |
 | The menu | Opens from both the toolbar icon and the browser's options screen. Switches persist across a reload; fine-tunes grey out when their parent is off. |
-| Redirects | With each switch on: `youtube.com` typed fresh (hard load) **and** clicking the YouTube logo in-app (SPA). Also `/shorts` and a specific `/shorts/<id>`. Then switch it off and confirm the redirect stops. |
-| Shorts hiding | Home, Subscriptions, search results, a channel page's tabs, the left sidebar and the collapsed mini sidebar — one switch at a time. |
+| Redirects | Out of the box: `youtube.com` typed fresh (hard load) **and** clicking the YouTube logo in-app (SPA). Also `/shorts` and a specific `/shorts/<id>`. Then switch each off and confirm that redirect — and only that one — stops. |
+| Shorts hiding | Home, Subscriptions, search results, a channel page's tabs, the left sidebar and the collapsed mini sidebar — switching one off at a time. |
 | Calm restyle | Both YouTube themes — avatar → **Appearance** → Dark and Light — and all four accents. Check text contrast, not just background colour. |
 | Watch page | The recommended column is gone and the player widens; fullscreen and theatre mode still behave. |
 | Picture-in-picture | Switch tabs, and minimise the window, with a video playing. Then the two fine-tunes. Chromium only — confirm the menu says so on Firefox. |
@@ -248,7 +252,7 @@ repairable later.
 manifest.json      # MV3 manifest — permissions, content scripts, ruleset registration, the menu
 settings.js        # the schema: every setting, its default, and what it drives
 content.js         # CSS gates, SPA-navigation redirects, picture-in-picture
-rules/*.json       # one declarativeNetRequest ruleset per redirect, all registered disabled
+rules/*.json       # one declarativeNetRequest ruleset per redirect, all registered enabled
 hide-shorts.css    # every Shorts surface: shelves, sidebar entries, channel tabs, grid items
 calm.css           # palettes, accents, flat surfaces, quiet buttons, sidebar trim, up-next removal
 options.html       # the menu — used as both the toolbar popup and the options page
@@ -268,15 +272,23 @@ tests/             # the automated suite — nothing here ships
 type or open cold, the second covers navigations YouTube handles internally.
 Changing a redirect usually means changing both.
 
-**How "off" stays off**, in two mechanisms:
+**How a switch turns something off**, in two mechanisms:
 
-- **CSS** — both stylesheets load in every YouTube tab, so every rule in them is
-  written behind an `html[data-ntr-…]` attribute selector that `content.js` only
-  sets for a switch that is on. An ungated rule applies to someone who turned
-  nothing on, and `test_stylesheets.py` fails on one.
-- **Redirects** — each ruleset is registered `"enabled": false` in the manifest
-  and switched on by `options.js`. `checks.py` fails any tree that commits one
-  enabled.
+- **CSS** — both stylesheets load in every YouTube tab and apply as they stand.
+  Every rule is written `html:not([data-ntr-off-…])`, and `content.js` sets that
+  attribute only for a switch someone turned off. `test_stylesheets.py` fails on
+  a rule that is ungated *or* gated the other way round.
+- **Redirects** — each ruleset is registered `"enabled": true` in the manifest
+  and switched off by `options.js`. `checks.py` fails any tree that commits one
+  disabled.
+
+**Why the CSS gate is a `:not()`.** Settings are read asynchronously while the
+stylesheets are already live, so there is a window in which no attribute is set
+at all. Written this way, that window renders the defaults. Written as a plain
+`html[data-ntr-…]`, every page load would paint bare YouTube and then correct
+itself — which for hiding rules means the Shorts shelves appearing and being
+snatched away, on every navigation. Someone who switches a rule *off* may see
+it apply for a few milliseconds; that is the rarer case and the milder failure.
 
 ---
 
@@ -411,9 +423,10 @@ not selectors.
   note explaining what forced it.
 - Group CSS by intent under a `/* ---- Section ---- */` heading, as the existing
   files do.
-- **Every CSS rule that paints starts with `html[data-ntr-…]`.** The only
-  exemption is a block that defines custom properties and nothing else, because
-  defining one paints nothing. The tests enforce both halves of that.
+- **Every CSS rule that paints starts with `html:not([data-ntr-off-…])`.** The
+  only exemption is a block that defines custom properties and nothing else,
+  because defining one paints nothing. The tests enforce both halves of that,
+  and reject the `html[data-ntr-…]` polarity outright.
 - Keep `!important` scoped to what actually needs to beat YouTube's own styles.
 - Prefer hiding a container over hiding its children — leftover headers and
   "Show more" buttons stranded in a gap are a bug in their own right.

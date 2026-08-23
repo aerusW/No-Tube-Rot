@@ -2,13 +2,17 @@
  * Calm restyle: softer, less "addicting" colours, flat solid surfaces, fewer
  * loud buttons, a trimmed sidebar, no up-next column.
  *
- * Each of those is a separate switch, and every rule below is gated behind
- * the attribute content.js sets for it once the settings have been read. On a
- * fresh install none of them are set, so this stylesheet paints nothing.
+ * Each of those is a separate switch, and every rule below applies by default
+ * and stops applying when content.js sets the matching `data-ntr-off-…`
+ * attribute — which it does only for a switch someone has turned off.
+ *
+ * Written as `:not()` rather than a plain attribute so that the gap before
+ * settings are read renders the defaults rather than bare YouTube; see the
+ * note on ATTRIBUTES in settings.js.
  *
  * The palettes are the exception: they only define custom properties, which
  * costs nothing and paints nothing on its own, so they are left ungated and
- * whichever rules are switched on can read them.
+ * whichever rules are in force can read them.
  *
  * Theme: these rules repaint surfaces but deliberately never set body text
  * colour — YouTube's own text colours are already right for whichever theme
@@ -85,49 +89,49 @@ html:not([dark])[data-ntr-accent="plum"] {
 }
 
 /* ---- Solid, softer surfaces (no near-black harshness) ---- */
-html[data-ntr-surfaces],
-html[data-ntr-surfaces] ytd-app,
-html[data-ntr-surfaces] ytd-watch-flexy,
-html[data-ntr-surfaces] #page-manager,
-html[data-ntr-surfaces] ytd-browse,
-html[data-ntr-surfaces] #primary,
-html[data-ntr-surfaces] #columns,
-html[data-ntr-surfaces] #content {
+html:not([data-ntr-off-surfaces]),
+html:not([data-ntr-off-surfaces]) ytd-app,
+html:not([data-ntr-off-surfaces]) ytd-watch-flexy,
+html:not([data-ntr-off-surfaces]) #page-manager,
+html:not([data-ntr-off-surfaces]) ytd-browse,
+html:not([data-ntr-off-surfaces]) #primary,
+html:not([data-ntr-off-surfaces]) #columns,
+html:not([data-ntr-off-surfaces]) #content {
   background-color: var(--ntr-bg) !important;
 }
-html[data-ntr-surfaces] #masthead-container,
-html[data-ntr-surfaces] ytd-masthead,
-html[data-ntr-surfaces] #masthead {
+html:not([data-ntr-off-surfaces]) #masthead-container,
+html:not([data-ntr-off-surfaces]) ytd-masthead,
+html:not([data-ntr-off-surfaces]) #masthead {
   background: var(--ntr-bg) !important;
   box-shadow: none !important;
 }
 
 /* ---- Calm the reds ---- */
 /* red YouTube logo -> monochrome */
-html[data-ntr-recolour] ytd-logo {
+html:not([data-ntr-off-recolour]) ytd-logo {
   filter: var(--ntr-logo-filter) !important;
 }
 /* watched-progress + scrubber -> accent instead of red */
-html[data-ntr-recolour] .ytp-play-progress,
-html[data-ntr-recolour] .ytp-swatch-background-color,
-html[data-ntr-recolour] .ytp-scrubber-button {
+html:not([data-ntr-off-recolour]) .ytp-play-progress,
+html:not([data-ntr-off-recolour]) .ytp-swatch-background-color,
+html:not([data-ntr-off-recolour]) .ytp-scrubber-button {
   background-color: var(--ntr-accent) !important;
 }
 /* notification / unread count badge -> accent */
-html[data-ntr-recolour] .ytSpecIconBadgeShapeBadge {
+html:not([data-ntr-off-recolour]) .ytSpecIconBadgeShapeBadge {
   background-color: var(--ntr-accent) !important;
   color: var(--ntr-on-accent) !important;
 }
 
 /* ---- Fewer / quieter buttons ---- */
 /* filter chips: flat surface rather than a bright fill */
-html[data-ntr-quiet] yt-chip-cloud-chip-renderer {
+html:not([data-ntr-off-quiet]) yt-chip-cloud-chip-renderer {
   background: var(--ntr-surface) !important;
   border: 1px solid var(--ntr-border) !important;
   color: var(--ntr-text) !important;
 }
-html[data-ntr-quiet] yt-chip-cloud-chip-renderer.iron-selected,
-html[data-ntr-quiet] yt-chip-cloud-chip-renderer[aria-selected="true"] {
+html:not([data-ntr-off-quiet]) yt-chip-cloud-chip-renderer.iron-selected,
+html:not([data-ntr-off-quiet]) yt-chip-cloud-chip-renderer[aria-selected="true"] {
   background: var(--ntr-surface-2) !important;
   color: var(--ntr-text) !important;
   border-color: transparent !important;
@@ -135,19 +139,19 @@ html[data-ntr-quiet] yt-chip-cloud-chip-renderer[aria-selected="true"] {
 /* With recolouring on as well, the selected chip is the one place a filter
    chip is allowed to carry the accent. Without it, quietening the buttons
    must not smuggle a new colour onto the page. */
-html[data-ntr-quiet][data-ntr-recolour] yt-chip-cloud-chip-renderer.iron-selected,
-html[data-ntr-quiet][data-ntr-recolour] yt-chip-cloud-chip-renderer[aria-selected="true"] {
+html:not([data-ntr-off-quiet]):not([data-ntr-off-recolour]) yt-chip-cloud-chip-renderer.iron-selected,
+html:not([data-ntr-off-quiet]):not([data-ntr-off-recolour]) yt-chip-cloud-chip-renderer[aria-selected="true"] {
   background: var(--ntr-accent) !important;
   color: var(--ntr-on-accent) !important;
 }
 /* secondary pill actions recede to outlines */
-html[data-ntr-quiet] .yt-spec-button-shape-next--tonal {
+html:not([data-ntr-off-quiet]) .yt-spec-button-shape-next--tonal {
   background: transparent !important;
   border: 1px solid var(--ntr-border) !important;
 }
 /* flat search box */
-html[data-ntr-quiet] #center #search-form,
-html[data-ntr-quiet] ytd-searchbox #container {
+html:not([data-ntr-off-quiet]) #center #search-form,
+html:not([data-ntr-off-quiet]) ytd-searchbox #container {
   background: var(--ntr-surface) !important;
   border: 1px solid var(--ntr-border) !important;
 }
@@ -157,22 +161,22 @@ html[data-ntr-quiet] ytd-searchbox #container {
    Matched on stable endpoint hrefs so it survives UI-language changes.
    Note: the "You" section contains a studio.youtube.com link (Your videos),
    so sections are never matched on that host — it would hide "You" too. */
-html[data-ntr-trim] ytd-guide-section-renderer:has(a[href="/premium"]),          /* More from YouTube */
-html[data-ntr-trim] ytd-guide-section-renderer:has(a[href="/gaming"]),           /* Explore */
-html[data-ntr-trim] ytd-guide-section-renderer:has(a[href*="/feed/storefront"]), /* Explore: Films */
-html[data-ntr-trim] ytd-guide-entry-renderer:has(a[href="/reporthistory"]),      /* Report history */
-html[data-ntr-trim] ytd-guide-renderer #footer,
-html[data-ntr-trim] tp-yt-app-drawer #footer {
+html:not([data-ntr-off-trim]) ytd-guide-section-renderer:has(a[href="/premium"]),          /* More from YouTube */
+html:not([data-ntr-off-trim]) ytd-guide-section-renderer:has(a[href="/gaming"]),           /* Explore */
+html:not([data-ntr-off-trim]) ytd-guide-section-renderer:has(a[href*="/feed/storefront"]), /* Explore: Films */
+html:not([data-ntr-off-trim]) ytd-guide-entry-renderer:has(a[href="/reporthistory"]),      /* Report history */
+html:not([data-ntr-off-trim]) ytd-guide-renderer #footer,
+html:not([data-ntr-off-trim]) tp-yt-app-drawer #footer {
   display: none !important;
 }
 
 /* ---- Watch page: drop the recommended / up-next column ---- */
 /* Removes the whole right column (which also carries live chat and the
    playlist panel) and lets the video widen to fill the reclaimed space. */
-html[data-ntr-no-upnext] #secondary.ytd-watch-flexy {
+html:not([data-ntr-off-upnext]) #secondary.ytd-watch-flexy {
   display: none !important;
 }
-html[data-ntr-no-upnext] ytd-watch-flexy[flexy]:not([fullscreen]) #primary.ytd-watch-flexy,
-html[data-ntr-no-upnext] ytd-watch-flexy[flexy]:not([fullscreen]) #columns.ytd-watch-flexy {
+html:not([data-ntr-off-upnext]) ytd-watch-flexy[flexy]:not([fullscreen]) #primary.ytd-watch-flexy,
+html:not([data-ntr-off-upnext]) ytd-watch-flexy[flexy]:not([fullscreen]) #columns.ytd-watch-flexy {
   max-width: none !important;
 }

@@ -14,42 +14,15 @@ All notable changes to this project are documented here. Versions match the
 
 ## 2.0.0 — 2026-08-23
 
-**Everything is now a switch, and every switch starts off.**
+**Everything it does is now a switch — and every switch starts on.**
 
-> ### ⚠️ Read this before updating
->
-> Up to 1.3.6, installing the extension *was* the configuration: it redirected
-> your homepage, removed Shorts and repainted YouTube from the moment it
-> loaded. That is no longer true. **After updating, YouTube will look and
-> behave exactly as it does without the extension** until you open the menu and
-> switch things on.
->
-> Click the toolbar icon (or **Extension options** in your browser's extensions
-> page) and turn on what you want. It takes about ten seconds, and the choices
-> stick.
+Nothing about a fresh install changes. Install it, and YouTube is as quiet as
+this extension knows how to make it, with no setup and nothing to configure.
+What is new is the way *back*: a menu that hands you any single piece of
+YouTube without giving up the rest.
 
-### Changed
-
-* **Nothing applies until you ask for it.** Every behaviour the extension has
-  ever had is now an individual switch, and all of them ship off. The reasoning
-  is that a tool which rewrites a site the moment it is installed has to be
-  right about every one of its opinions for every one of its users — and it
-  wasn't. Wanting Shorts gone is not the same as wanting a sage-coloured
-  progress bar, and neither implies wanting your homepage redirected.
-* **The redirects are three separate switches**, not one behaviour. Sending the
-  homepage to your subscriptions, sending the Shorts feed there, and opening a
-  Short in the normal player are independent, because wanting one of them is
-  no reason to want the other two. Each is its own `declarativeNetRequest`
-  ruleset, registered disabled and switched on from the menu.
-* **Hiding Shorts is five switches**, one per surface: the shelves in feeds,
-  the shelf in search results, individual Shorts scattered through grids, the
-  sidebar entry, and the tab on channel pages.
-* **The calm restyle is four switches** — flat surfaces, replacing the red,
-  quietening the buttons, and trimming the sidebar — plus the up-next column
-  removal, which is now separate from the rest of the look.
-* **A new permission: `storage`.** It holds your settings and nothing else, in
-  local storage, which does not sync between devices or leave the machine. This
-  is what makes the release a MAJOR bump under the project's own rules.
+Upgrading from 1.x keeps the behaviour you already had, and adds automatic
+picture-in-picture on top.
 
 ### Added
 
@@ -57,16 +30,43 @@ All notable changes to this project are documented here. Versions match the
   browser's extension options screen — the same page either way. It is styled
   the way the extension styles YouTube: flat surfaces, hairline rules, one
   accent, and no animation beyond the switches themselves.
+* **16 individual switches.** Every behaviour the extension has ever had can
+  now be turned off on its own. Hiding Shorts is five switches, one per
+  surface, because wanting them out of your search results is not the same as
+  wanting the sidebar entry gone. The redirects are three, because wanting a
+  Short to open in the normal player is no reason to have the address you
+  typed replaced. The calm restyle is four, plus the up-next column, which is
+  now separate from the rest of the look.
 * **Four accents to choose from** — sage, slate, clay and plum — where 1.x had
   one. Each is defined twice, for the light and dark themes, and every one
   clears WCAG AA against its background and for text sitting on it.
-* **Automatic picture-in-picture.** A playing video can follow you into a
-  floating window when the tab or the browser stops being visible, and go back
-  when you return. Two fine-tunes: whether merely losing focus counts, and
-  whether coming back closes the window again. It only ever closes a window it
-  opened itself.
-* **A "turn everything off" button**, which puts a copy back to the state it
+* **Automatic picture-in-picture.** A playing video follows you into a
+  floating window when the tab or the browser stops being visible, and goes
+  back when you return. Two fine-tunes: whether merely losing focus counts,
+  and whether coming back closes the window again. It only ever closes a
+  window it opened itself. Chromium only — Firefox draws its own
+  picture-in-picture control and exposes no API for it, and the menu says so
+  there rather than offering switches that quietly do nothing.
+* **A "turn everything back on" button**, which returns a copy to the state it
   installs in.
+
+### Changed
+
+* **A new permission: `storage`.** It holds your settings and nothing else, in
+  local storage, which does not sync between devices or leave the machine. A
+  default install writes nothing at all — storage is only touched once you
+  switch something off. This is what makes the release a MAJOR bump under the
+  project's own rules.
+* **The redirects are one `declarativeNetRequest` ruleset each**, registered
+  enabled and switched off from the menu, so turning one off genuinely
+  unregisters the rule rather than working around it.
+* **The stylesheets are gated rather than unconditional.** Every rule is now
+  written `html:not([data-ntr-off-…])`, and the content script sets that
+  attribute only for a switch you turned off. The polarity is deliberate:
+  settings are read asynchronously while the stylesheets are already live, so
+  there is a brief window with no attribute set, and this way round that
+  window renders the defaults. Gated the other way, every page load would show
+  the Shorts shelves and then snatch them away.
 
 ### Project
 
@@ -74,25 +74,32 @@ All notable changes to this project are documented here. Versions match the
   allowlist is derived from `manifest.json`, and the manifest names
   `options.html` but has no way to know that page pulls in `options.css` and
   `options.js` — so packaging now reads referenced HTML for its local `href`
-  and `src` assets. Without it the release would have shipped a menu that opens
-  blank, which, with every switch off by default, is an extension that cannot
-  be turned on at all.
-* **`checks.py` fails any tree that registers a ruleset enabled**, so the
+  and `src` assets. Without it the release would have shipped a menu that
+  opens blank.
+* **`checks.py` fails any tree that registers a ruleset disabled**, so the
   default position is enforced rather than remembered. It also parses every
   ruleset the manifest registers rather than a hardcoded filename, and looks
   for debug leftovers in every shipped script rather than only `content.js`.
-* **The test suite covers the new shape**: that a fresh install redirects
-  nothing and sets no attribute, that each switch moves only its own URLs and
-  sets only its own gate, that every setting has a control in the menu and
-  every control is a real setting, that the CSS gates are exactly the ones the
-  script sets, and that the swatch shown for an accent is the colour the page
-  will actually use.
+* **A signing workflow for test builds** (`sign-test.yml`). Pushing
+  `sign/<version>` produces a Mozilla-signed `.xpi` without creating a tag or
+  a release, so a branch can be tested in Firefox properly. It refuses to sign
+  the version in `manifest.json`, since AMO never signs a version twice and
+  burning that one would leave the real release unsignable.
+* **`release_notes.py` writes UTF-8 explicitly.** A Windows console defaults to
+  a legacy code page and crashed on a non-ASCII changelog entry — on the one
+  machine CONTRIBUTING tells contributors to rehearse a release from.
+* **The test suite covers the new shape**: that a fresh install already
+  redirects and sets no off-switch attribute, that switching one thing off
+  marks exactly one gate and moves only its own URLs, that every setting has a
+  control in the menu and every control is a real setting, that the CSS gates
+  are exactly the ones the script sets and none is gated the wrong way round,
+  and that the swatch shown for an accent is the colour the page will use.
 
 ### Documentation
 
-* The README and CONTRIBUTING no longer say the project has no settings. Both
-  now describe the opt-in position, what each switch does, and why the default
-  changed.
+* The README and CONTRIBUTING no longer describe the project as having no
+  settings. Both now explain the default position, what each switch does, and
+  why the defaults are the strong ones rather than the safe ones.
 
 ## 1.3.6 — 2026-08-17
 

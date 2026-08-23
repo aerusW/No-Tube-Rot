@@ -135,16 +135,17 @@ def check_manifest(manifest: dict) -> str:
     if not missing:
         ok(f"{len(referenced)} referenced files all exist")
 
-    # 2.0's promise, enforced rather than remembered: a fresh install applies
-    # nothing. A ruleset registered enabled would redirect people who never
-    # asked for it, and it is a one-word edit away at all times.
+    # The default position, enforced rather than remembered: a fresh install
+    # gives the full effect with nothing to configure first. A ruleset
+    # registered disabled would silently drop a redirect for everyone who
+    # never opens the menu, and it is a one-word edit away at all times.
     resources = manifest.get("declarative_net_request", {}).get("rule_resources", [])
-    enabled = [r.get("id") for r in resources if r.get("enabled")]
-    if enabled:
-        fail(f"ruleset(s) registered enabled: {', '.join(enabled)}. Every "
-             "redirect must ship off and be switched on from the menu.")
+    disabled = [r.get("id") for r in resources if not r.get("enabled")]
+    if disabled:
+        fail(f"ruleset(s) registered disabled: {', '.join(disabled)}. Every "
+             "redirect must ship on and be switched off from the menu.")
     elif resources:
-        ok(f"{len(resources)} rulesets, all registered disabled")
+        ok(f"{len(resources)} rulesets, all registered enabled")
 
     version = manifest.get("version", "")
     if not VERSION_RE.match(version):

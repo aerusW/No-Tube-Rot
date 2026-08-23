@@ -104,13 +104,13 @@ class Packaging(unittest.TestCase):
         self.assertEqual([res["id"] for res in resources],
                          ["redirect-home", "redirect-shorts-feed", "shorts-as-video"])
 
-    def test_every_ruleset_ships_disabled(self):
-        # The headline promise of 2.0: a fresh install redirects nothing. This
-        # is the assertion that makes "minimal by default" a fact rather than
-        # an intention.
+    def test_every_ruleset_ships_enabled(self):
+        # The default position: a fresh install already redirects, with nothing
+        # to configure first. A ruleset committed disabled would quietly drop
+        # that redirect for everyone who never opens the menu.
         for res in MANIFEST["declarative_net_request"]["rule_resources"]:
             with self.subTest(ruleset=res["id"]):
-                self.assertFalse(res["enabled"])
+                self.assertTrue(res["enabled"])
 
     def test_ruleset_files_live_together_and_exist(self):
         for res in MANIFEST["declarative_net_request"]["rule_resources"]:

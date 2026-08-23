@@ -151,10 +151,10 @@ FIXTURE_MANIFEST = {
     "action": {"default_popup": "options.html"},
     "options_ui": {"page": "options.html", "open_in_tab": False},
     "declarative_net_request": {
-        # Registered disabled, like the real thing: checks.py fails a tree that
-        # ships a redirect already switched on.
+        # Registered enabled, like the real thing: checks.py fails a tree that
+        # ships a redirect switched off.
         "rule_resources": [
-            {"id": "redirect-home", "enabled": False,
+            {"id": "redirect-home", "enabled": True,
              "path": "rules/redirect-home.json"}
         ]
     },

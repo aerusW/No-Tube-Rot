@@ -5,8 +5,8 @@
  * Three jobs, and they are independent of each other:
  *
  *   1. Put the CSS gates on <html>. Both stylesheets ship with every rule
- *      behind an attribute selector, so nothing they contain paints until the
- *      matching setting has been read and its attribute set here.
+ *      behind a `:not([...])` attribute selector, so what they contain applies
+ *      by default and stops applying once a setting here says otherwise.
  *   2. Redirect YouTube's in-app navigations. declarativeNetRequest catches
  *      URLs the browser loads over the network; it cannot see the SPA router,
  *      so clicking the logo or opening a Short from a feed is this file's
@@ -18,7 +18,8 @@
  * document_start — before YouTube has parsed its own markup, let alone
  * painted. The listeners below are therefore registered synchronously and
  * simply do nothing while `settings` is still null, rather than being
- * registered later and missing an event.
+ * registered later and missing an event. The stylesheets cover the same gap
+ * from the other side, by defaulting to applied.
  */
 'use strict';
 
@@ -32,11 +33,15 @@ let settings = null;
 function paint() {
   const html = document.documentElement;
   if (!html) return;
+  // Inverted on purpose: the attribute marks a setting that is switched off.
+  // Until this first runs, no attribute is set and the stylesheets therefore
+  // render the defaults — which is exactly what they should render. See
+  // ATTRIBUTES in settings.js for why that way round.
   for (const [key, attribute] of Object.entries(ATTRIBUTES)) {
     if (settings[key]) {
-      html.setAttribute(attribute, '');
-    } else {
       html.removeAttribute(attribute);
+    } else {
+      html.setAttribute(attribute, '');
     }
   }
   // Always present: it selects a palette rather than applying one, and the

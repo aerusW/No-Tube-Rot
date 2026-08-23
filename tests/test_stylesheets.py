@@ -98,12 +98,18 @@ class Structure(unittest.TestCase):
                     self.assertNotIn(smell, body)
 
 
-class NothingAppliesUntilItIsSwitchedOn(unittest.TestCase):
-    """The 2.0 default position, asserted against the stylesheets themselves.
+class EverythingAppliesUntilItIsSwitchedOff(unittest.TestCase):
+    """The default position, asserted against the stylesheets themselves.
 
-    Both files ship in every YouTube tab. What keeps a fresh install from
-    changing anything is that every rule in them is behind an attribute
-    content.js only sets once a setting says so.
+    Both files ship in every YouTube tab and apply as they stand. What lets a
+    switch turn one off is that every rule is written `html:not([data-ntr-off-…])`,
+    and content.js sets that attribute only for a switch someone turned off.
+
+    The polarity is the point, not an accident of spelling. Settings are read
+    asynchronously while these stylesheets are already live, so there is a
+    window with no attribute set at all; written this way that window renders
+    the defaults, and written the other way every page would flash the thing
+    it is about to hide.
     """
 
     def test_every_rule_that_paints_is_gated(self):
@@ -117,9 +123,19 @@ class NothingAppliesUntilItIsSwitchedOn(unittest.TestCase):
                         continue
                     with self.subTest(name=name, selector=selector):
                         self.assertRegex(
-                            selector, r"^html\[data-ntr-[\w-]+\]",
-                            "an ungated rule applies to someone who turned "
-                            "nothing on")
+                            selector, r"^html:not\(\[data-ntr-off-[\w-]+\]\)",
+                            "an ungated rule cannot be switched off, and a "
+                            "rule gated the other way round flashes on load")
+
+    def test_no_rule_is_gated_the_other_way_round(self):
+        # `html[data-ntr-…]` would only apply once the settings had been read,
+        # which is the flicker this polarity exists to avoid.
+        for name, css in (("hide-shorts.css", HIDE), ("calm.css", CALM)):
+            for selectors, _ in support.css_rules(css):
+                if is_palette_block(selectors):
+                    continue
+                with self.subTest(name=name, selectors=selectors):
+                    self.assertNotRegex(selectors, r"html\[data-ntr-(?!accent)")
 
     def test_the_only_ungated_blocks_define_variables_and_nothing_else(self):
         # Palettes are exempt because defining a custom property paints
