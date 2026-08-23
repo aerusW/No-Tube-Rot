@@ -19,8 +19,8 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SHIPPED_JSON = ["manifest.json", "rules.json"]
 ISSUE_FORMS = ".github/ISSUE_TEMPLATE"
+HTML_ASSET_RE = re.compile(r"""(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 CHANGELOG_HEADING = re.compile(r"^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})\s*$", re.M)
 
@@ -47,31 +47,73 @@ def git(*args: str) -> str | None:
     return r.stdout.strip() if r.returncode == 0 else None
 
 
-def referenced_files(manifest: dict) -> list[str]:
-    """Every file manifest.json points at, as repo-relative paths.
+def local_assets(html: str) -> list[str]:
+    """The local files an HTML page loads, from its href/src attributes.
+
+    The manifest can name options.html, but it has no way to know that page
+    pulls in options.css and options.js — and a release archive built without
+    them ships a menu that opens blank. Absolute URLs and fragments are
+    ignored; nothing shipped here loads anything remote, and this is the check
+    that would notice if something started to.
+    """
+    found = HTML_ASSET_RE.findall(html)
+    return [rel for rel in found
+            if not re.match(r"(?:[a-z]+:|//|#|/)", rel, re.I)]
+
+
+def referenced_files(manifest: dict, root: pathlib.Path | None = None) -> list[str]:
+    """Every file the extension needs, as repo-relative paths.
 
     Shared with package.py, which uses it as the allowlist for what goes into a
     release archive. Keeping one definition means a new manifest key can never
     be validated here but silently left out of the package — or the reverse.
+
+    Referenced HTML pages are followed one level into the assets they load, so
+    the menu's stylesheet and script are part of the allowlist without the
+    manifest having to repeat them.
     """
+    root = ROOT if root is None else root
     referenced = list(manifest.get("icons", {}).values())
     for entry in manifest.get("content_scripts", []):
         referenced += entry.get("css", []) + entry.get("js", [])
     for res in manifest.get("declarative_net_request", {}).get("rule_resources", []):
         referenced.append(res.get("path", ""))
-    return [rel for rel in referenced if rel]
+
+    action = manifest.get("action", {})
+    referenced.append(action.get("default_popup", ""))
+    referenced += list(action.get("default_icon", {}).values())
+    referenced.append(manifest.get("options_ui", {}).get("page", ""))
+
+    for rel in [r for r in referenced if r.endswith(".html")]:
+        path = root / rel
+        if path.exists():
+            referenced += local_assets(path.read_text(encoding="utf-8"))
+
+    # Deduplicate, keeping first-seen order so the packaging output is stable.
+    return list(dict.fromkeys(rel for rel in referenced if rel))
 
 
 def check_json() -> dict:
+    """manifest.json, plus every rule file it registers.
+
+    The ruleset list is read from the manifest rather than hardcoded: the
+    redirects are one ruleset each so they can be switched on independently,
+    and a new one must not be able to arrive unparsed.
+    """
     print("\nJSON parses")
     manifest = {}
-    for name in SHIPPED_JSON:
-        path = ROOT / name
+    try:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        ok("manifest.json")
+    except Exception as exc:
+        fail(f"manifest.json: {exc}")
+        return manifest
+
+    for res in manifest.get("declarative_net_request", {}).get("rule_resources", []):
+        name = res.get("path", "")
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            json.loads((ROOT / name).read_text(encoding="utf-8"))
             ok(name)
-            if name == "manifest.json":
-                manifest = data
         except Exception as exc:
             fail(f"{name}: {exc}")
     return manifest
@@ -92,6 +134,18 @@ def check_manifest(manifest: dict) -> str:
         fail(f"manifest.json references missing file: {rel}")
     if not missing:
         ok(f"{len(referenced)} referenced files all exist")
+
+    # The default position, enforced rather than remembered: a fresh install
+    # gives the full effect with nothing to configure first. A ruleset
+    # registered disabled would silently drop a redirect for everyone who
+    # never opens the menu, and it is a one-word edit away at all times.
+    resources = manifest.get("declarative_net_request", {}).get("rule_resources", [])
+    disabled = [r.get("id") for r in resources if not r.get("enabled")]
+    if disabled:
+        fail(f"ruleset(s) registered disabled: {', '.join(disabled)}. Every "
+             "redirect must ship on and be switched off from the menu.")
+    elif resources:
+        ok(f"{len(resources)} rulesets, all registered enabled")
 
     version = manifest.get("version", "")
     if not VERSION_RE.match(version):
@@ -167,9 +221,11 @@ def check_version_bump(version: str, base: str) -> None:
         ok(f"version bumped {old} -> {version}, {tag} is free")
 
 
-def check_debug_leftovers() -> None:
+def check_debug_leftovers(manifest: dict) -> None:
+    """Every shipped script, not just the one that used to be the only one."""
     print("\nNo debug leftovers in shipped code")
-    for name in ("content.js",):
+    scripts = [rel for rel in referenced_files(manifest) if rel.endswith(".js")]
+    for name in scripts:
         text = (ROOT / name).read_text(encoding="utf-8")
         found = [p for p in ("console.log", "debugger") if p in text]
         for pattern in found:
@@ -237,7 +293,7 @@ def main() -> int:
         check_changelog(version)
         if args.base:
             check_version_bump(version, args.base)
-    check_debug_leftovers()
+    check_debug_leftovers(manifest)
     check_reserved_names()
 
     print()

@@ -30,10 +30,16 @@ SCRIPTS = ROOT / ".github" / "scripts"
 # adding a shipped file is a deliberate act with a test to update.
 SHIPPED = [
     "manifest.json",
-    "rules.json",
+    "rules/redirect-home.json",
+    "rules/redirect-shorts-feed.json",
+    "rules/shorts-as-video.json",
+    "settings.js",
     "content.js",
     "hide-shorts.css",
     "calm.css",
+    "options.html",
+    "options.css",
+    "options.js",
 ]
 
 
@@ -56,8 +62,19 @@ def manifest() -> dict:
     return read_json("manifest.json")
 
 
+def rulesets() -> dict[str, list]:
+    """Every registered ruleset, keyed by id, in manifest order.
+
+    The redirects are one ruleset each so the menu can switch them on
+    independently, so there is no single rules file to read any more.
+    """
+    resources = manifest()["declarative_net_request"]["rule_resources"]
+    return {res["id"]: read_json(res["path"]) for res in resources}
+
+
 def rules() -> list:
-    return read_json("rules.json")
+    """Every rule from every ruleset, flattened."""
+    return [rule for group in rulesets().values() for rule in group]
 
 
 # ---- CSS ----------------------------------------------------------------
@@ -129,20 +146,36 @@ FIXTURE_MANIFEST = {
     "version": "1.0.0",
     "description": "A throwaway extension used by the tests.",
     "icons": {"16": "icons/icon-16.png"},
-    "permissions": ["declarativeNetRequest"],
+    "permissions": ["declarativeNetRequest", "storage"],
     "host_permissions": ["*://www.youtube.com/*"],
+    "action": {"default_popup": "options.html"},
+    "options_ui": {"page": "options.html", "open_in_tab": False},
     "declarative_net_request": {
-        "rule_resources": [{"id": "ruleset_1", "enabled": True, "path": "rules.json"}]
+        # Registered enabled, like the real thing: checks.py fails a tree that
+        # ships a redirect switched off.
+        "rule_resources": [
+            {"id": "redirect-home", "enabled": True,
+             "path": "rules/redirect-home.json"}
+        ]
     },
     "content_scripts": [
         {
             "matches": ["*://www.youtube.com/*"],
             "css": ["calm.css"],
-            "js": ["content.js"],
+            "js": ["settings.js", "content.js"],
             "run_at": "document_start",
         }
     ],
 }
+
+# Deliberately references two files the manifest never names. referenced_files()
+# has to reach them by reading this page, or a release ships a menu that opens
+# blank.
+FIXTURE_OPTIONS_HTML = """<!doctype html>
+<title>Fixture</title>
+<link rel="stylesheet" href="options.css">
+<script src="options.js"></script>
+"""
 
 FIXTURE_CHANGELOG = """# Changelog
 
@@ -165,15 +198,21 @@ def build_fixture(root: pathlib.Path, *, version: str = "1.0.0",
     data = json.loads(json.dumps(FIXTURE_MANIFEST))
     data["version"] = version
     (root / "manifest.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
-    (root / "rules.json").write_text("[]", encoding="utf-8")
+    rules_dir = root / "rules"
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / "redirect-home.json").write_text("[]", encoding="utf-8")
     (root / "LICENSE").write_text("MIT\n", encoding="utf-8")
     (root / "CHANGELOG.md").write_text(
         FIXTURE_CHANGELOG if changelog is None else changelog, encoding="utf-8")
 
     written = {
         "content.js": content_js.encode("utf-8"),
+        "settings.js": b"// nothing\n",
         "calm.css": b"html { color: red; }\n",
         "icons/icon-16.png": b"\x89PNG\r\n\x1a\n",
+        "options.html": FIXTURE_OPTIONS_HTML.encode("utf-8"),
+        "options.css": b"body { margin: 0; }\n",
+        "options.js": b"// nothing\n",
     }
     for rel, blob in written.items():
         if rel in drop:

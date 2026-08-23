@@ -1,0 +1,187 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>No-Tube-Rot</title>
+<link rel="stylesheet" href="options.css">
+
+<!--
+  One page, two entry points: the toolbar popup and the browser's extension
+  options screen both load this file. It is laid out narrow so the popup is
+  the natural shape and the options screen simply centres it.
+
+  Every control's id is the settings key it writes, which is how options.js
+  binds them without a per-control line — and how the test suite checks that
+  no setting exists without a way to reach it.
+-->
+
+<main>
+  <header>
+    <h1>No-Tube-Rot</h1>
+    <p class="lede">All of this is already on. Switch off whatever you want back.</p>
+  </header>
+
+  <section>
+    <h2>Redirects</h2>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Open on your subscriptions</span>
+        <span class="hint">youtube.com lands on your Subscriptions feed instead of the algorithmic home grid.</span>
+      </span>
+      <input type="checkbox" id="redirectHome">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Send the Shorts feed away</span>
+        <span class="hint">The swipe feed at /shorts goes to your subscriptions.</span>
+      </span>
+      <input type="checkbox" id="redirectShortsFeed">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Open Shorts as normal videos</span>
+        <span class="hint">A Short opens in the regular player, with a scrubber and no vertical feed.</span>
+      </span>
+      <input type="checkbox" id="shortsAsVideo">
+    </label>
+
+    <p class="note" id="redirectNote" hidden>
+      This browser would not let the redirect rules be switched. They may not
+      take effect.
+    </p>
+  </section>
+
+  <section>
+    <h2>Shorts</h2>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Shelves in feeds</span>
+        <span class="hint">The Shorts rows on home and subscriptions.</span>
+      </span>
+      <input type="checkbox" id="hideShortsShelves">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Shelf in search results</span>
+      </span>
+      <input type="checkbox" id="hideShortsSearch">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Individual Shorts</span>
+        <span class="hint">Single Shorts scattered through grids, lists and results.</span>
+      </span>
+      <input type="checkbox" id="hideShortsItems">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Sidebar entry</span>
+      </span>
+      <input type="checkbox" id="hideShortsSidebar">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Channel page tab</span>
+      </span>
+      <input type="checkbox" id="hideShortsTab">
+    </label>
+  </section>
+
+  <section>
+    <h2>Appearance</h2>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Flat, softer surfaces</span>
+        <span class="hint">Replaces the near-black and the glaring white with calmer solids.</span>
+      </span>
+      <input type="checkbox" id="calmSurfaces">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Replace the red</span>
+        <span class="hint">Progress bar, scrubber, badges and the logo stop signalling urgency.</span>
+      </span>
+      <input type="checkbox" id="recolourAccent">
+    </label>
+
+    <fieldset class="swatches" data-requires="recolourAccent">
+      <legend>Accent</legend>
+      <label><input type="radio" name="accent" value="sage"><span class="swatch" data-accent="sage"></span>Sage</label>
+      <label><input type="radio" name="accent" value="slate"><span class="swatch" data-accent="slate"></span>Slate</label>
+      <label><input type="radio" name="accent" value="clay"><span class="swatch" data-accent="clay"></span>Clay</label>
+      <label><input type="radio" name="accent" value="plum"><span class="swatch" data-accent="plum"></span>Plum</label>
+    </fieldset>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Quieten the buttons</span>
+        <span class="hint">Filter chips, pill actions and the search box recede.</span>
+      </span>
+      <input type="checkbox" id="quietButtons">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Trim the sidebar</span>
+        <span class="hint">Drops Explore, More from YouTube and the footer links.</span>
+      </span>
+      <input type="checkbox" id="trimSidebar">
+    </label>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Hide the up-next column</span>
+        <span class="hint">Removes the recommendation rail; the video widens to fill it.</span>
+      </span>
+      <input type="checkbox" id="hideUpNext">
+    </label>
+  </section>
+
+  <section>
+    <h2>Picture-in-picture</h2>
+
+    <label class="row">
+      <span class="text">
+        <span class="name">Pop out when hidden</span>
+        <span class="hint">A playing video follows you into a floating window when the tab or the browser stops being visible.</span>
+      </span>
+      <input type="checkbox" id="autoPip">
+    </label>
+
+    <label class="row sub" data-requires="autoPip">
+      <span class="text">
+        <span class="name">Also on losing focus</span>
+        <span class="hint">Pops out when you click another window, even if YouTube is still on screen.</span>
+      </span>
+      <input type="checkbox" id="autoPipOnBlur">
+    </label>
+
+    <label class="row sub" data-requires="autoPip">
+      <span class="text">
+        <span class="name">Put it back on return</span>
+        <span class="hint">Closes the floating window when you come back. Only ever closes one it opened.</span>
+      </span>
+      <input type="checkbox" id="autoPipReturn">
+    </label>
+
+    <p class="note" id="pipNote" hidden>
+      This browser has no scriptable picture-in-picture, so these do nothing here.
+    </p>
+  </section>
+
+  <footer>
+    <button type="button" id="reset">Turn everything back on</button>
+  </footer>
+</main>
+
+<script src="settings.js"></script>
+<script src="options.js"></script>

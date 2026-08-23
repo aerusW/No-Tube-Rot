@@ -136,6 +136,23 @@ class TheRealChangelog(unittest.TestCase):
     def test_the_current_version_has_notes(self):
         self.assertIsNotNone(self.notes.notes_for(support.manifest()["version"]))
 
+    def test_every_section_can_actually_be_printed(self):
+        # notes_for() returning a string is not the same as main() being able
+        # to write it: a Windows console defaults to a legacy code page, and
+        # 2.0.0's release note opens with a ⚠️ callout that cannot be encoded
+        # in it. That crashed the script on the machine CONTRIBUTING tells
+        # contributors to rehearse a release from.
+        import subprocess
+        for version in self.versions:
+            with self.subTest(version=version):
+                result = subprocess.run(
+                    [sys.executable, str(support.ROOT / ".github" / "scripts"
+                                         / "release_notes.py"), version],
+                    capture_output=True, cwd=support.ROOT)
+                self.assertEqual(result.returncode, 0,
+                                 result.stderr.decode("utf-8", "replace"))
+                self.assertTrue(result.stdout.decode("utf-8").strip())
+
     def test_versions_are_newest_first(self):
         as_tuples = [tuple(int(p) for p in v.split(".")) for v in self.versions]
         self.assertEqual(as_tuples, sorted(as_tuples, reverse=True),

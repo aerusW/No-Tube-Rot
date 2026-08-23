@@ -71,9 +71,12 @@ class HealthyRepository(CheckCase):
 
 class BrokenJson(CheckCase):
     def test_unparseable_rules_are_caught(self):
+        # The ruleset list is read from the manifest rather than hardcoded, so
+        # a redirect added later is parsed too.
         self.fixture()
-        (self.root / "rules.json").write_text("[{,]", encoding="utf-8")
-        self.assertFails("rules.json")
+        (self.root / "rules" / "redirect-home.json").write_text(
+            "[{,]", encoding="utf-8")
+        self.assertFails("rules/redirect-home.json")
 
     def test_unparseable_manifest_is_caught(self):
         self.fixture()
@@ -290,9 +293,46 @@ class SharedHelpers(unittest.TestCase):
     def test_it_finds_icons_scripts_stylesheets_and_rulesets(self):
         found = self.checks.referenced_files(support.manifest())
         for rel in ("icons/icon-16.png", "icons/icon-48.png", "icons/icon-128.png",
-                    "hide-shorts.css", "calm.css", "content.js", "rules.json"):
+                    "hide-shorts.css", "calm.css", "settings.js", "content.js",
+                    "rules/redirect-home.json", "rules/redirect-shorts-feed.json",
+                    "rules/shorts-as-video.json"):
             with self.subTest(rel=rel):
                 self.assertIn(rel, found)
+
+    def test_it_finds_the_menu_and_what_the_menu_loads(self):
+        # options.css and options.js are named nowhere in the manifest. Left
+        # out of the allowlist, the release ships a menu that opens blank.
+        found = self.checks.referenced_files(support.manifest())
+        for rel in ("options.html", "options.css", "options.js"):
+            with self.subTest(rel=rel):
+                self.assertIn(rel, found)
+
+    def test_it_reads_html_from_the_tree_it_is_given(self):
+        # package.py points this at the tree being packaged, not at the
+        # repository the script happens to live in.
+        manifest = {"options_ui": {"page": "page.html"}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "page.html").write_text(
+                '<link rel="stylesheet" href="only-here.css">', encoding="utf-8")
+            self.assertEqual(self.checks.referenced_files(manifest, root),
+                             ["page.html", "only-here.css"])
+        # Without a root it reads the repository, where that page is absent —
+        # an unreadable page is skipped rather than crashing the build.
+        self.assertEqual(self.checks.referenced_files(manifest), ["page.html"])
+
+    def test_it_ignores_remote_and_absolute_urls_in_html(self):
+        self.assertEqual(self.checks.local_assets(
+            '<link href="https://cdn.example/a.css">'
+            '<script src="//example/b.js"></script>'
+            '<a href="#top">t</a><img src="/abs.png">'
+            '<script src="local.js"></script>'), ["local.js"])
+
+    def test_it_does_not_list_a_file_twice(self):
+        # The same icons appear under both "icons" and the action; a duplicate
+        # would be copied twice and shown twice in the packaging output.
+        found = self.checks.referenced_files(support.manifest())
+        self.assertEqual(len(found), len(set(found)))
 
     def test_it_skips_empty_paths_rather_than_returning_them(self):
         self.assertEqual(self.checks.referenced_files(
